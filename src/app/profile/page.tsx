@@ -1,0 +1,195 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import LabledInput from "@/components/LabledInput";
+import { ArrowLeft, Pencil } from "lucide-react";
+import Image from "next/image";
+import CustomizableAlertDialog from "@/components/CustomizableAlertDialog";
+
+interface UserProfile {
+    username: string;
+    email: string;
+    password: string;
+    profileImage: string;
+    createdAt: Date;
+    displayName: string;
+}
+
+export default function ProfilePage() {
+    const router = useRouter();
+    const [user, setUser] = useState<UserProfile | null>({
+        username: "username",
+        email: "email",
+        password: "password",
+        profileImage: "/defaultImage.png", // Replace with a valid public path or placeholder
+        createdAt: new Date(),
+        displayName: "test",
+    });
+
+    // Fetch profile data from backend on mount
+    useEffect(() => {
+        async function fetchProfile() {
+            try {
+                const res = await fetch("https://your-backend-api.com/api/profile", {
+                    credentials: "include",
+                });
+                const data = await res.json();
+                setUser(data);
+            } catch (err) {
+                console.error("Failed to load profile", err);
+            }
+        }
+        // fetchProfile();
+    }, []);
+
+    const handleSave = async () => {
+        // TODO: implement update request
+        alert("Profile saved!");
+    };
+
+    const handleDelete = async () => {
+        // TODO: implement delete request
+        alert("Account deleted!");
+        
+    };
+
+    if (!user) {
+        return (
+            <div className="min-h-screen flex items-center justify-center text-gray-600">
+                Loading...
+            </div>
+        );
+    }
+
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+            <Card className="w-full max-w-4xl rounded-2xl shadow-md">
+                <CardHeader className="relative flex justify-center items-center">
+                    {/* Back Button */}
+                    <button
+                        onClick={() => router.back()}
+                        className="absolute left-4 top-4 flex items-center space-x-1 text-gray-600 hover:text-gray-800  cursor-pointer"
+                    >
+                        <ArrowLeft size={20} />
+                        <span className="text-sm">Back</span>
+                    </button>
+
+                    <CardTitle className="text-xl font-semibold text-center">
+                        My Profile
+                    </CardTitle>
+                </CardHeader>
+
+                <CardContent className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-8 p-6">
+                    {/* Left Section: Avatar */}
+                    <div className="w-1/2 flex flex-col items-center space-y-2 justify-center">
+                        <div className="relative flex justify-center items-center">
+                            <Image
+                                src={user.profileImage || "/next.svg"}
+                                alt="Profile"
+                                width={240}
+                                height={240}
+                                className="rounded-full object-cover border"
+                            />
+                            <button className="absolute bottom-2 right-2 bg-white p-1.5 rounded-full shadow hover:bg-gray-100 transition">
+                                <Pencil size={16} />
+                            </button>
+                        </div>
+                        <p className="pt-3 text-sm text-gray-700">
+                            Member since{" "}
+                            {new Date(user.createdAt).toLocaleDateString("en-GB", {
+                                day: "numeric",
+                                month: "long",
+                                year: "numeric",
+                            })}
+                        </p>
+                    </div>
+
+                    {/* Right Section: Form */}
+                    <div className="w-full md:w-1/2 flex flex-col space-y-4">
+                        <LabledInput
+                            label="Display Name"
+                            type="text"
+                            placeholder="display name"
+                            value={user.displayName}
+                            onChange={()=>{}}
+                        /> 
+                        
+                        <LabledInput
+                            label="Username"
+                            type="text"
+                            placeholder="username"
+                            value={user.username}
+                            onChange={()=>{}}
+                        />
+
+                        <LabledInput
+                            label="E Mail"
+                            value={user.email}
+                            type="email"
+                            placeholder="email"
+                            onChange={()=>{}}
+                        />
+
+                        <LabledInput
+                            label="Password"
+                            placeholder="password"
+                            type="password"
+                            value={user.password}
+                            onChange={(e) =>
+                                setUser({ ...user, password: e.target.value })
+                            }
+                        />
+
+                        {/* <div className="relative">
+                            <LabledInput
+                                label="Password"
+                                placeholder="password"
+                                type="password"
+                                value={user.password}
+                                onChange={(e) =>
+                                    setUser({ ...user, password: e.target.value })
+                                }
+                            />
+                            <button
+                                type="button"
+                                className="absolute right-3 top-8 text-gray-600 hover:text-gray-800"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div> */}
+
+                        <div className="flex flex-col space-y-3 pt-2">
+                            <Button
+                                onClick={handleSave}
+                                className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+                            >
+                                Save
+                            </Button>
+                            {/* <Button
+                                onClick={handleDelete}
+                                className="w-full bg-red-400 hover:bg-red-500 text-white"
+                            >
+                                Delete Account
+                            </Button> */}
+
+                            <CustomizableAlertDialog
+                                actionName="Continue"
+                                onAction={handleDelete}
+                                triggerButtonLabel="Delete Account"
+                                alertDialogTitle="Are you absolutely sure?"
+                                alertDialogDescription={`This action cannot be undone. 
+                                    This will permanently delete your account and remove your data 
+                                    from our servers.`}
+                                className=""
+                            />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}

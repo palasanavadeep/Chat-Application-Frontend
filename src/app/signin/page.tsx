@@ -9,7 +9,7 @@ import Link from "next/link";
 export default function SignInPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  
+
   const handleSignIn = async () => {
     try {
       const response = await fetch("https://backend-api.com/signin", {
@@ -34,17 +34,17 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
-      <Card className="w-full max-w-lg rounded-2xl shadow-lg flex flex-col items-center text-center">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+      <Card className="w-full max-w-md rounded-2xl shadow-lg flex flex-col items-center text-center py-8">
         <CardHeader className="w-full text-center">
           <CardTitle className="text-2xl font-semibold">
             Chat Application
           </CardTitle>
-          <p className="text-sm mt-1">Sign In</p>
+          <p className="text-sm mt-1 text-gray-600">Sign In</p>
         </CardHeader>
 
-        <CardContent className="w-full flex flex-col items-center justify-center">
-          <div className="w-4/5 flex flex-col space-y-4">
+        <CardContent className="w-full flex flex-col items-center justify-center mt-4">
+          <div className="w-full max-w-sm flex flex-col space-y-4">
             <LabledInput
               label="Username"
               type="text"
@@ -62,7 +62,7 @@ export default function SignInPage() {
             />
 
             <Button
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white"
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white transition-all"
               onClick={handleSignIn}
             >
               Sign In
@@ -70,9 +70,9 @@ export default function SignInPage() {
 
             <p className="text-sm text-center text-gray-600">
               Don’t have an account?{" "}
-              <Link href="/signup" className="text-blue-600 hover:underline">
+              <a href="/signup" className="text-blue-600 hover:underline">
                 Sign Up
-              </Link>
+              </a>
             </p>
           </div>
         </CardContent>
