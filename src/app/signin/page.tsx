@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useChatStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LabledInput from "@/components/LabledInput";
@@ -9,10 +11,13 @@ import Link from "next/link";
 export default function SignInPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const router = useRouter()
+  const { setAuthFromLogin } = useChatStore()
 
   const handleSignIn = async () => {
     try {
-      const response = await fetch("https://backend-api.com/signin", {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_SERVER_URL}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -23,7 +28,13 @@ export default function SignInPage() {
       if (response.ok) {
         const data = await response.json();
         console.log("Sign-in successful:", data);
-        // Handle successful sign-in (e.g., redirect, store token, etc.)
+        // Expecting { token, user }
+        const token = data.token ?? data.accessToken ?? null
+        const user = data.user ?? data.profile ?? null
+        if (token && user) {
+          setAuthFromLogin(user, token)
+          router.push('/chat')
+        }
       } else {
         console.error("Sign-in failed:", response.statusText);
         // Handle sign-in failure

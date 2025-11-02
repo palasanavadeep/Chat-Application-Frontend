@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useChatStore } from "@/lib/store";
 import { Upload } from "lucide-react";
 import LabledInput from "@/components/LabledInput";
 import Link from "next/link";
@@ -16,6 +18,9 @@ export default function SignUpPage() {
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
 
+    const router = useRouter()
+    const { setAuthFromLogin } = useChatStore()
+
     const handleRegister = async () => {
         if (password !== confirmPassword) {
             alert("Passwords do not match!");
@@ -26,28 +31,42 @@ export default function SignUpPage() {
         formData.append("username", username);
         formData.append("email", email);
         formData.append("password", password);
+        formData.append("displayName", username);
         if (file) {
-            formData.append("avatar", file);
+            formData.append("profileImageFile", file);
         }
 
         setLoading(true);
 
         try {
-            const response = await fetch("https://your-backend-api.com/register", {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_BACKEND_SERVER_URL}/auth/register`, {
                 method: "POST",
                 body: formData,
+                credentials : "include"
             });
 
             if (response.ok) {
-                alert("Registration successful!");
+                const responseData = await response.json(); // Expecting { token, user }
+                const token = responseData.token ?? responseData.accessToken ?? null
+                const user = responseData.user ?? responseData.profile ?? null
+                if (token && user) {
+                    // persist to store (store will also persist to localStorage)
+                    setAuthFromLogin(user, token)
+                    router.push('/chat')
+                    return
+                }
+
+                // fallback: show success but no auto-login
+                alert("Registration successful!")
             } else {
-                const errorData = await response.json();
-                alert(`Registration failed: ${errorData.message}`);
+                const errorData = await response.json().catch(() => ({}))
+                alert(`Registration failed: ${errorData.message ?? response.statusText}`)
             }
         } catch (error) {
-            alert("An error occurred during registration.");
+            alert("An error occurred during registration.")
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
     };
 

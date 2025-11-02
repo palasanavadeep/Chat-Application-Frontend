@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono,Poppins } from "next/font/google";
 import "./globals.css";
+import { ChatStoreInitializer } from '@/lib/store'
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +35,9 @@ export default function RootLayout({
         // className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           className={poppins.className}
       >
-        {children}
+        <ChatStoreInitializer>
+          {children}
+        </ChatStoreInitializer>
       </body>
     </html>
   );

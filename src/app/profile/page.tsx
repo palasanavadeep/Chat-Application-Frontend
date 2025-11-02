@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useChatStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import LabledInput from "@/components/LabledInput";
@@ -10,40 +11,34 @@ import Image from "next/image";
 import CustomizableAlertDialog from "@/components/CustomizableAlertDialog";
 
 interface UserProfile {
-    username: string;
-    email: string;
-    password: string;
-    profileImage: string;
-    createdAt: Date;
-    displayName: string;
+    username?: string;
+    email?: string;
+    // password is not persisted in store
+    profileImage?: string;
+    createdAt?: string | null;
+    displayName?: string;
 }
 
 export default function ProfilePage() {
     const router = useRouter();
-    const [user, setUser] = useState<UserProfile | null>({
-        username: "username",
-        email: "email",
-        password: "password",
-        profileImage: "/defaultImage.png", // Replace with a valid public path or placeholder
-        createdAt: new Date(),
-        displayName: "test",
-    });
+    const { state } = useChatStore()
+    const storeUser = state.user
 
-    // Fetch profile data from backend on mount
+    const [user, setUser] = useState<UserProfile | null>(null)
+
+    // initialize from store when available
     useEffect(() => {
-        async function fetchProfile() {
-            try {
-                const res = await fetch("https://your-backend-api.com/api/profile", {
-                    credentials: "include",
-                });
-                const data = await res.json();
-                setUser(data);
-            } catch (err) {
-                console.error("Failed to load profile", err);
-            }
-        }
-        // fetchProfile();
-    }, []);
+        if (!storeUser) return
+        const profileImage = storeUser.profileImage?.file
+        const createdAt = storeUser.createdAt
+        setUser({
+            username: storeUser.username ?? storeUser.displayName ?? "",
+            email: storeUser.email ?? "",
+            profileImage: profileImage ?? "/defaultImage.png",
+            createdAt: createdAt ?? null,
+            displayName: storeUser.displayName ?? "",
+        })
+    }, [storeUser])
 
     const handleSave = async () => {
         // TODO: implement update request
@@ -63,6 +58,17 @@ export default function ProfilePage() {
             </div>
         );
     }
+
+    const imageSrc = user.profileImage
+        ? // If the backend already returned a data URI, use it directly.
+          user.profileImage.startsWith("data:")
+            ? user.profileImage
+            : // If the backend returned a path that starts with '/', use it as-is.
+            user.profileImage.startsWith("/")
+            ? user.profileImage
+            : // Otherwise assume it's a base64-encoded string and prefix with a JPEG data URI.
+            `data:image/jpeg;base64,${user.profileImage}`
+        : "/next.svg"
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -87,7 +93,7 @@ export default function ProfilePage() {
                     <div className="w-1/2 flex flex-col items-center space-y-2 justify-center">
                         <div className="relative flex justify-center items-center">
                             <Image
-                                src={user.profileImage || "/next.svg"}
+                                src={`data:image/*;base64,${imageSrc}`}
                                 alt="Profile"
                                 width={240}
                                 height={240}
@@ -99,11 +105,13 @@ export default function ProfilePage() {
                         </div>
                         <p className="pt-3 text-sm text-gray-700">
                             Member since{" "}
-                            {new Date(user.createdAt).toLocaleDateString("en-GB", {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                            })}
+                            {user.createdAt
+                                ? new Date(user.createdAt).toLocaleDateString("en-GB", {
+                                      day: "numeric",
+                                      month: "long",
+                                      year: "numeric",
+                                  })
+                                : "Unknown"}
                         </p>
                     </div>
 
@@ -113,7 +121,7 @@ export default function ProfilePage() {
                             label="Display Name"
                             type="text"
                             placeholder="display name"
-                            value={user.displayName}
+                            value={user.displayName ?? ""}
                             onChange={()=>{}}
                         /> 
                         
@@ -121,26 +129,16 @@ export default function ProfilePage() {
                             label="Username"
                             type="text"
                             placeholder="username"
-                            value={user.username}
+                            value={user.username ?? ""}
                             onChange={()=>{}}
                         />
 
                         <LabledInput
                             label="E Mail"
-                            value={user.email}
+                            value={user.email ?? ""}
                             type="email"
                             placeholder="email"
                             onChange={()=>{}}
-                        />
-
-                        <LabledInput
-                            label="Password"
-                            placeholder="password"
-                            type="password"
-                            value={user.password}
-                            onChange={(e) =>
-                                setUser({ ...user, password: e.target.value })
-                            }
                         />
 
                         {/* <div className="relative">
