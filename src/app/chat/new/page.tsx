@@ -38,7 +38,7 @@ export default function NewChatPage() {
   const createGroup = async () => {
     const participantIds = members.map((m) => m.id)
     try {
-      sendSocketAction("createNewConversation", { type: "group", name: groupName, description: groupDesc, participants: participantIds })
+      sendSocketAction("createNewConversation", { type: "GROUP", name: groupName, description: groupDesc, participants: participantIds })
     } catch (e) {}
     router.push('/chat')
   }

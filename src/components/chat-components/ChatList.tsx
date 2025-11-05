@@ -16,9 +16,9 @@ export function ChatList() {
 
   const conversations = (state.conversations ?? []).filter(c => {
     if (filter === "all") return true
-    if (filter === "group") return (c.type ?? "") === "group"
-    if (filter === "personal") return (c.type ?? "") === "personal"
-    if (filter === "broadcast") return (c.type ?? "") === "broadcast"
+    if (filter === "group") return (c.type.lookupCode.toLowerCase() ?? "") === "group"
+    if (filter === "personal") return (c.type.lookupCode.toLowerCase() ?? "") === "personal"
+    if (filter === "broadcast") return (c.type.lookupCode.toLowerCase() ?? "") === "broadcast"
     return true
   })
 

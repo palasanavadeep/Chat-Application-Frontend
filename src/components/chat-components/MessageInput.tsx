@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useChatStore } from "@/lib/store"
 
 interface Props {
-  convId: string
+  convId: string | number
 }
 
 export default function MessageInput({ convId }: Props) {
@@ -14,7 +14,7 @@ export default function MessageInput({ convId }: Props) {
   const send = () => {
     if (!text.trim()) return
     try {
-      const ok = sendSocketAction("sendMessage", { conversationId: convId, content: text })
+      const ok = sendSocketAction("sendMessage", { conversationId: convId, messageContent : text })
       if (!ok) {
         // could show toast
         console.warn("socket not open")

@@ -24,19 +24,20 @@ export default function SignInPage() {
         },
         body: JSON.stringify({ username, password }),
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Sign-in successful:", data);
+      const responseData = await response.json();
+      // console.log(response);
+      if (response.ok && responseData.success) {
+        console.log("Sign-in successful:", responseData);
         // Expecting { token, user }
-        const token = data.token ?? data.accessToken ?? null
-        const user = data.user ?? data.profile ?? null
+        const token = responseData.data.token ?? responseData.data.accessToken ?? null
+        const user = responseData.data.user ?? responseData.data.profile ?? null
         if (token && user) {
           setAuthFromLogin(user, token)
           router.push('/chat')
         }
       } else {
-        console.error("Sign-in failed:", response.statusText);
+        console.error("Sign-in failed:", responseData);
+        // console.log(responseData.message);
         // Handle sign-in failure
       }
     } catch (error) {
@@ -81,9 +82,9 @@ export default function SignInPage() {
 
             <p className="text-sm text-center text-gray-600">
               Don’t have an account?{" "}
-              <a href="/signup" className="text-blue-600 hover:underline">
+              <Link href="/signup" className="text-blue-600 hover:underline">
                 Sign Up
-              </a>
+              </Link>
             </p>
           </div>
         </CardContent>

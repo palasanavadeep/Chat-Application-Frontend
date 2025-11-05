@@ -9,12 +9,13 @@ import LabledInput from "@/components/LabledInput";
 import { ArrowLeft, Pencil } from "lucide-react";
 import Image from "next/image";
 import CustomizableAlertDialog from "@/components/CustomizableAlertDialog";
+import { base64ToDataUrl } from "@/lib/utils";
 
 interface UserProfile {
     username?: string;
     email?: string;
     // password is not persisted in store
-    profileImage?: string;
+    profileImage?: string | undefined;
     createdAt?: string | null;
     displayName?: string;
 }
@@ -38,6 +39,7 @@ export default function ProfilePage() {
             createdAt: createdAt ?? null,
             displayName: storeUser.displayName ?? "",
         })
+        console.log(user?.profileImage)
     }, [storeUser])
 
     const handleSave = async () => {
@@ -69,6 +71,7 @@ export default function ProfilePage() {
             : // Otherwise assume it's a base64-encoded string and prefix with a JPEG data URI.
             `data:image/jpeg;base64,${user.profileImage}`
         : "/next.svg"
+    
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
@@ -93,7 +96,7 @@ export default function ProfilePage() {
                     <div className="w-1/2 flex flex-col items-center space-y-2 justify-center">
                         <div className="relative flex justify-center items-center">
                             <Image
-                                src={`data:image/*;base64,${imageSrc}`}
+                                src={base64ToDataUrl(imageSrc)}
                                 alt="Profile"
                                 width={240}
                                 height={240}

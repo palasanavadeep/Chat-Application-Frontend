@@ -12,6 +12,7 @@ import Link from "next/link";
 
 export default function SignUpPage() {
     const [username, setUsername] = useState("");
+    const [displayName, setDisplayName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -31,7 +32,7 @@ export default function SignUpPage() {
         formData.append("username", username);
         formData.append("email", email);
         formData.append("password", password);
-        formData.append("displayName", username);
+        formData.append("displayName", displayName ?? username);
         if (file) {
             formData.append("profileImageFile", file);
         }
@@ -45,23 +46,21 @@ export default function SignUpPage() {
                 body: formData,
                 credentials : "include"
             });
-
-            if (response.ok) {
-                const responseData = await response.json(); // Expecting { token, user }
-                const token = responseData.token ?? responseData.accessToken ?? null
-                const user = responseData.user ?? responseData.profile ?? null
+            const responseData = await response.json();
+            if (response.ok && responseData.success) {
+                const token = responseData.data.token ?? responseData.data.accessToken ?? null
+                const user = responseData.data.user ?? responseData.data.profile ?? null
                 if (token && user) {
                     // persist to store (store will also persist to localStorage)
                     setAuthFromLogin(user, token)
                     router.push('/chat')
                     return
                 }
-
                 // fallback: show success but no auto-login
                 alert("Registration successful!")
             } else {
-                const errorData = await response.json().catch(() => ({}))
-                alert(`Registration failed: ${errorData.message ?? response.statusText}`)
+                const errorData = responseData;
+                alert(`Registration failed: ${errorData.message ?? responseData.status}`)
             }
         } catch (error) {
             alert("An error occurred during registration.")
@@ -89,6 +88,7 @@ export default function SignUpPage() {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                             />
+                            
 
                             <LabledInput
                                 label="E Mail"
@@ -118,10 +118,20 @@ export default function SignUpPage() {
                         {/* Right Avatar Upload Section */}
                         <div
                             className="flex flex-col justify-center space-y-4 cursor-pointer"
-                            onClick={() => document.getElementById("fileInput")?.click()}
+                            
                         >
+                             <LabledInput
+                                label="Display Name"
+                                type="text"
+                                placeholder="Enter your Name here.."
+                                value={displayName}
+                                onChange={(e) => setDisplayName(e.target.value)}
+                            />
+
                             <Label>Avatar</Label>
-                            <div className="flex flex-col items-center border rounded-lg p-4 bg-gray-50">
+                            <div 
+                            className="flex flex-col items-center border rounded-lg  p-4 bg-gray-50"
+                            onClick={() => document.getElementById("fileInput")?.click()}>
                                 <div className="w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center bg-white">
                                     {file ? (
                                         <img

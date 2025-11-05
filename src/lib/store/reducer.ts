@@ -8,6 +8,7 @@ export const initialState: ChatState = {
   chats: {},
   conversationFilter: "all",
   activeConversationId: null,
+  chatsLoaded: false,
 }
 
 export function sortConversations(convs: Conversation[]) {
@@ -49,6 +50,7 @@ export function reducer(state: ChatState, action: Action): ChatState {
         ...state,
         conversations: sortConversations([...action.conversations]),
         chats: { ...action.chats },
+        chatsLoaded: true,
       }
     case "LOAD_MESSAGES": {
       const { convId, messages } = action
@@ -60,8 +62,9 @@ export function reducer(state: ChatState, action: Action): ChatState {
       const convFromState = state.conversations.find((c) => c.id === convId)
       const conv: Conversation = convFromState
         ? { ...convFromState, lastMessage: last }
-        : { id: convId, members: [], lastMessage: last }
-      const conversations = sortConversations([conv, ...existing])
+  : { id: convId, type: { id: 0, lookupCode: "PERSONAL", lookupName: "Personal" }, conversationParticipants: [], lastMessage: last }
+      // const conversations = sortConversations([conv, ...existing])
+      const conversations = [conv, ...existing];
       return { ...state, chats, conversations }
     }
     case "SET_CONVERSATION_FILTER": {
@@ -69,8 +72,8 @@ export function reducer(state: ChatState, action: Action): ChatState {
     }
     case "ADD_OR_UPDATE_CONVERSATION": {
       const existing = state.conversations.filter((c) => c.id !== action.conv.id)
-      const updated = sortConversations([action.conv, ...existing])
-      return { ...state, conversations: updated }
+      // const updated = sortConversations([action.conv, ...existing])
+      return { ...state, conversations: [action.conv, ...existing] }
     }
     case "REMOVE_CONVERSATION": {
       const convs = state.conversations.filter((c) => c.id !== action.convId)
@@ -90,10 +93,25 @@ export function reducer(state: ChatState, action: Action): ChatState {
       if (convIndex >= 0) {
         conv = { ...state.conversations[convIndex], lastMessage: message }
       } else {
-        conv = { id: convId, members: [], lastMessage: message }
+        conv = { id: convId, type: { id: 0, lookupCode: "PERSONAL", lookupName: "Personal" }, conversationParticipants: [], lastMessage: message }
+      }
+
+      // if the incoming message is for a conversation that is not currently active,
+      // mark it as having unread messages and increment unreadCount. If the conversation
+      // is active, clear unread indicators.
+      try {
+        const isActive = String(state.activeConversationId) === String(convId)
+        if (!isActive) {
+          conv = { ...conv, hasUnreadMessages: true, unreadCount: (conv.unreadCount ?? 0) + 1 }
+        } else {
+          conv = { ...conv, hasUnreadMessages: false, unreadCount: 0 }
+        }
+      } catch (e) {
+        // ignore
       }
       const otherConvs = state.conversations.filter((c) => c.id !== convId)
-      const conversations = sortConversations([conv, ...otherConvs])
+      // const conversations = sortConversations([conv, ...otherConvs])
+      const conversations = state.conversations;
 
       return { ...state, chats, conversations }
     }
