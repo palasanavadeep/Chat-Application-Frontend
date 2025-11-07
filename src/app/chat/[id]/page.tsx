@@ -10,9 +10,9 @@ export default function ConversationPage() {
   const id = params?.id as string | undefined
   const setActiveConversation = useChatStore((s) => s.setActiveConversation)
   // conversation.id may be a number or string; route param `id` is a string.
-  // normalize both to string when comparing so the find works reliably.
-  const conversation = useChatStore((s) => s.state.conversations.find((c) => String(c.id) === String(id)))
-
+    // normalize both to string when comparing so the find works reliably.
+  const  conversation = useChatStore((s) => s.state.conversations.find((c) => String(c.id) === String(id)))
+  
   useEffect(() => {
     try {
       setActiveConversation(id ?? null)

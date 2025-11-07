@@ -136,6 +136,42 @@ const useChatStore = create<StoreContextType>()(
               } catch (e) {}
               break;
             }
+            // case "newMessage": {
+            //   try {
+            //     const msg = payload.message ?? payload;
+            //     const convId = payload.conversationId ?? (msg && msg.conversationId);
+            //     if (convId) {
+            //       set((s) => {
+            //         // Update messages
+            //         let nextState = reducer(s.state, {
+            //           type: "ADD_MESSAGE",
+            //           convId,
+            //           message: msg,
+            //         } as Action);
+
+            //         // Also update conversation.lastMessage if it’s newer
+            //         const conv = nextState.conversations[convId];
+            //         if (conv) {
+            //           const shouldUpdate =
+            //             !conv.lastMessage ||
+            //             new Date(msg.createdAt) > new Date(conv.lastMessage.createdAt);
+
+            //           if (shouldUpdate) {
+            //             conv.lastMessage = msg;
+            //             // Move conversation to top if sorted by recent
+            //             nextState = reducer(nextState, {
+            //               type: "ADD_OR_UPDATE_CONVERSATION",
+            //               conv,
+            //             } as Action);
+            //           }
+            //         }
+
+            //         return { state: nextState };
+            //       });
+            //     }
+            //   } catch (e) {}
+            //   break;
+            // }
             case "newConversation": {
               const conv = payload;
               if (!conv) {
@@ -267,14 +303,22 @@ const useChatStore = create<StoreContextType>()(
               const convs = Array.isArray(payload)
                 ? payload
                 : payload.conversations ?? [];
-              console.log(convs);
-              set((s) => ({
-                state: reducer(s.state, {
+              // debug: log incoming conversations and ensure reducer is applied
+              console.log("[WS] getUserConversationsResponse payload:", convs);
+              try {
+                // use get().state to avoid any stale closure over s
+                const next = reducer(get().state, {
                   type: "LOAD_CHATS",
                   conversations: convs,
                   chats: {},
-                } as Action),
-              }));
+                } as Action);
+                set(() => ({ state: next }));
+                // log store state after applying reducer for debugging
+                console.log("[Store] conversations after LOAD_CHATS:", get().state.conversations);
+              } catch (err) {
+                console.error("Failed to apply LOAD_CHATS reducer:", err);
+              }
+              
               break;
             }
             case "getConversationResponse": {

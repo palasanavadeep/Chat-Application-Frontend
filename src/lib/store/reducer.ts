@@ -48,7 +48,8 @@ export function reducer(state: ChatState, action: Action): ChatState {
     case "LOAD_CHATS":
       return {
         ...state,
-        conversations: sortConversations([...action.conversations]),
+        // conversations: sortConversations([...action.conversations]),
+        conversations: [...action.conversations],
         chats: { ...action.chats },
         chatsLoaded: true,
       }
@@ -65,8 +66,26 @@ export function reducer(state: ChatState, action: Action): ChatState {
   : { id: convId, type: { id: 0, lookupCode: "PERSONAL", lookupName: "Personal" }, conversationParticipants: [], lastMessage: last }
       // const conversations = sortConversations([conv, ...existing])
       const conversations = [conv, ...existing];
-      return { ...state, chats, conversations }
+      return { ...state, chats }
     }
+
+  //   case "LOAD_MESSAGES": {
+  //     const { convId, messages } = action
+  //     const chats = { ...state.chats }
+  //     chats[convId] = messages
+
+  //     const last = messages.length ? messages[messages.length - 1] : null
+  //     // const existing = state.conversations.filter((c) => c.id !== convId)
+  //     const convFromState = state.conversations.find((c) => c.id === convId)
+  //     const conv: Conversation = convFromState
+  //       ? { ...convFromState, lastMessage: last }
+  // : { id: convId, type: { id: 0, lookupCode: "PERSONAL", lookupName: "Personal" }, conversationParticipants: [], lastMessage: last }
+  //     // const conversations = sortConversations([conv, ...existing])
+  //     // const conversations = [conv, ...existing];
+  //     return { ...state, chats }
+  //   }
+
+  
     case "SET_CONVERSATION_FILTER": {
       return { ...state, conversationFilter: action.filter }
     }

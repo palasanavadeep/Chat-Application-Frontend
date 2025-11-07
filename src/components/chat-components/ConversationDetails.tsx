@@ -1,9 +1,11 @@
 "use client"
 
 import React from "react"
+import Image from 'next/image'
 import type { Conversation } from "@/lib/types"
 import { useChatStore } from '@/lib/store'
 import { base64ToDataUrl } from "@/lib/utils"
+import { useRouter } from 'next/navigation'
 
 interface Props {
   conversation: Conversation
@@ -11,6 +13,7 @@ interface Props {
 
 export default function ConversationDetails({ conversation }: Props) {
   const me = useChatStore((s) => s.state.user)
+  const router = useRouter()
 
   const isGroup = (conversation.type?.lookupCode ?? '').toLowerCase() === 'group'
 
@@ -32,17 +35,25 @@ export default function ConversationDetails({ conversation }: Props) {
     subtitle = conversation.lastMessage ? conversation.lastMessage.body : null
   }
 
+  const openDetails = () => {
+    try {
+      if (conversation && conversation.id) {
+        router.push(`/chat/${conversation.id}/details`)
+      }
+    } catch (e) {}
+  }
+
   return (
-    <div className="p-4 border-b">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <img src={imageSrc === '/defaultImage.jpg' ? '/defaultImage.jpg' : base64ToDataUrl(imageSrc)} alt={`${title} avatar`} className="w-12 h-12 rounded-full object-cover" />
-          <div>
-            <div className="text-lg font-semibold">{title}</div>
-            <div className="text-sm text-muted-foreground">{subtitle ?? 'No messages yet'}</div>
-          </div>
+    <div className="flex items-center justify-between p-4 border-b bg-white sticky top-0 z-10">
+      <button onClick={openDetails} className="flex items-center gap-4 text-left w-full">
+        <div className="w-12 h-12 relative rounded-full overflow-hidden">
+          <Image src={imageSrc === '/defaultImage.jpg' ? '/defaultImage.jpg' : base64ToDataUrl(imageSrc)} alt={`${title} avatar`} fill sizes="48px" className="object-cover" unoptimized />
         </div>
-      </div>
+        <div className="flex-1">
+          <div className="text-lg font-semibold">{title}</div>
+          <div className="text-sm text-muted-foreground">{subtitle ?? 'No messages yet'}</div>
+        </div>
+      </button>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
+import Image from 'next/image'
 import type { Conversation } from '@/lib/types'
 import { useChatStore } from '@/lib/store'
 import { base64ToDataUrl } from '@/lib/utils';
@@ -13,13 +14,15 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ conversation }) => {
     // Determine display name and image depending on conversation type
     const isGroup = (conversation.type?.lookupCode ?? '').toLowerCase() === 'group'
     const me = useChatStore((s) => s.state.user)
-    
+    const activeConversationId = useChatStore((s) => s.state.activeConversationId)
+
     let displayName: string
     let imageSrc: string
 
-    useEffect(()=>{
-        console.log(conversation)
-    },[])
+    // useEffect(()=>{
+    //     console.log(conversation)
+    //     console.log(activeConversationId)
+    // },[])
 
     if (isGroup) {
         displayName = conversation.name ?? `Group ${conversation.id}`
@@ -38,12 +41,11 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ conversation }) => {
     const hasUnread = !!conversation.hasUnreadMessages || !!conversation.unreadCount
 
     return (
-        <div className="flex items-center p-3 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition">
-            <img
-                src={ imageSrc === '/defaultImage.jpg' ? '/defaultImage.jpg' : base64ToDataUrl(imageSrc)}
-                alt={`${displayName} profile`}
-                className="w-12 h-12 rounded-full object-cover mr-3"
-            />
+        <div className={`flex items-center p-3 border-b border-gray-200 cursor-pointer 
+        ${activeConversationId == conversation.id && "bg-gray-200"} hover:bg-gray-100 transition`}>
+            <div className="w-12 h-12 relative rounded-full overflow-hidden mr-3">
+                <Image src={ imageSrc === '/defaultImage.jpg' ? '/defaultImage.jpg' : base64ToDataUrl(imageSrc)} alt={`${displayName} profile`} fill sizes="48px" className="object-cover" unoptimized />
+            </div>
             <div className="flex-1">
                 <div className="text-base font-semibold text-gray-800">{displayName}</div>
                 <div className="text-sm text-gray-600 truncate">{lastMessage}</div>

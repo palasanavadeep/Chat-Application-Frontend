@@ -9,6 +9,7 @@ import { useChatStore } from "@/lib/store";
 import { Upload } from "lucide-react";
 import LabledInput from "@/components/LabledInput";
 import Link from "next/link";
+import Image from 'next/image'
 
 export default function SignUpPage() {
     const [username, setUsername] = useState("");
@@ -119,6 +120,7 @@ export default function SignUpPage() {
                         <div
                             className="flex flex-col justify-center space-y-4 cursor-pointer"
                             
+                            
                         >
                              <LabledInput
                                 label="Display Name"
@@ -129,8 +131,7 @@ export default function SignUpPage() {
                             />
 
                             <Label>Avatar</Label>
-                            <div 
-                            className="flex flex-col items-center border rounded-lg  p-4 bg-gray-50"
+                            <div className="flex flex-col items-center border rounded-lg p-4 bg-gray-50"
                             onClick={() => document.getElementById("fileInput")?.click()}>
                                 <div className="w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center bg-white">
                                     {file ? (
