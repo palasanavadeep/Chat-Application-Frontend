@@ -2,12 +2,13 @@
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { User, ChatState, Conversation, Message } from "@/lib/types";
+import type { User, ChatState, Conversation, Message, SocketPayload } from "@/lib/types";
 import { initialState, reducer } from "@/lib/store/reducer";
 import { createWebSocket } from "@/lib/store/ws";
 import type { Action } from "@/lib/store/reducer";
 import { navigate } from "@/navigation";
 import { serialize } from "v8";
+import { getBase64StringFromFile } from "../utils";
 
 
 // reducer and initialState are now provided by './reducer'
@@ -37,7 +38,7 @@ type StoreContextType = {
     filter: "all" | "group" | "personal" | "broadcast"
   ) => void;
   // send an arbitrary websocket action (client -> server); returns true if sent
-  sendSocketAction: (action: string, data?: unknown) => boolean;
+  sendSocketAction: (action: string, data?: unknown, fileObj?: File | null) => Promise<boolean>;
 };
 
 // module-scoped refs for websocket and pending requests (persist across hook calls)
@@ -525,11 +526,20 @@ const useChatStore = create<StoreContextType>()(
       } as Action),
     })),
 
-  sendSocketAction: (action: string, data: unknown = {}, file?: File) => {
+  sendSocketAction: async (action: string, data: unknown = {}, fileObj?: File | null) => {
     try {
       const ws = wsRef;
       if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ action, data }));
+        let payload : SocketPayload = {action,data};
+        if(fileObj){
+          const base64File = await getBase64StringFromFile(fileObj);
+          payload = {
+          ...payload,
+          file: base64File,
+          fileName: fileObj.name,
+        };
+        }
+        ws.send(JSON.stringify(payload));
         return true;
       }
     } catch (e) {}

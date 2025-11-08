@@ -4,17 +4,19 @@ import React from "react"
 import Image from 'next/image'
 import { useParams } from "next/navigation"
 import { useChatStore } from "@/lib/store/useChatStore"
-import type { Conversation } from "@/lib/types"
 
 export default function ConversationDetailsPage() {
   const params = useParams()
   const id = params?.id as string | undefined
   const conversation = useChatStore((s) => s.state.conversations.find((c) => String(c.id) === String(id)))
 
+
   if (!id) return <div className="p-6">No conversation selected</div>
   if (!conversation) return <div className="p-6">Loading conversation...</div>
 
   const isGroup = (conversation.type?.lookupCode ?? '').toLowerCase() === 'group'
+
+  // const name = isGroup ? conversation.name : conversation.conversationParticipants.
 
   return (
     <div className="p-6 max-w-4xl mx-auto">

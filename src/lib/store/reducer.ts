@@ -48,7 +48,6 @@ export function reducer(state: ChatState, action: Action): ChatState {
     case "LOAD_CHATS":
       return {
         ...state,
-        // conversations: sortConversations([...action.conversations]),
         conversations: [...action.conversations],
         chats: { ...action.chats },
         chatsLoaded: true,
@@ -100,40 +99,146 @@ export function reducer(state: ChatState, action: Action): ChatState {
       delete chats[action.convId]
       return { ...state, conversations: convs, chats }
     }
+    // case "ADD_MESSAGE": {
+    //   const { convId, message } = action
+    //   const chats = { ...state.chats }
+    //   const msgs = chats[convId] ? [...chats[convId]] : []
+    //   msgs.push(message)
+    //   chats[convId] = msgs
+
+    //   const convIndex = state.conversations.findIndex((c) => c.id === convId)
+    //   let conv: Conversation
+    //   if (convIndex >= 0) {
+    //     conv = { ...state.conversations[convIndex], lastMessage: message }
+    //   } else {
+    //     conv = { id: convId, type: { id: 0, lookupCode: "PERSONAL", lookupName: "Personal" }, conversationParticipants: [], lastMessage: message }
+    //   }
+
+    //   // if the incoming message is for a conversation that is not currently active,
+    //   // mark it as having unread messages and increment unreadCount. If the conversation
+    //   // is active, clear unread indicators.
+    //   try {
+    //     const isActive = String(state.activeConversationId) === String(convId)
+    //     if (!isActive) {
+    //       conv = { ...conv, hasUnreadMessages: true, unreadCount: (conv.unreadCount ?? 0) + 1 }
+    //     } else {
+    //       conv = { ...conv, hasUnreadMessages: false, unreadCount: 0 }
+    //     }
+    //   } catch (e) {
+    //     // ignore
+    //   }
+    //   const otherConvs = state.conversations.filter((c) => c.id !== convId)
+    //   // const conversations = sortConversations([conv, ...otherConvs])
+    //   const conversations = state.conversations;
+
+    //   return { ...state, chats, conversations }
+    // }
+    // case "ADD_MESSAGE": {
+    //   const { convId, message } = action
+    //   const chats = { ...state.chats }
+    //   const msgs = chats[convId] ? [...chats[convId]] : []
+    //   msgs.push(message)
+    //   chats[convId] = msgs
+
+    //   // find existing conversation
+    //   const convIndex = state.conversations.findIndex((c) => c.id === convId)
+    //   let conv: Conversation
+
+    //   if (convIndex >= 0) {
+    //     conv = { ...state.conversations[convIndex], lastMessage: message }
+    //   } else {
+    //     conv = {
+    //       id: convId,
+    //       type: { id: 0, lookupCode: "PERSONAL", lookupName: "Personal" },
+    //       conversationParticipants: [],
+    //       lastMessage: message,
+    //     }
+    //   }
+
+    //   // unread logic
+    //   try {
+    //     const isActive = String(state.activeConversationId) === String(convId)
+    //     if (!isActive) {
+    //       conv = {
+    //         ...conv,
+    //         hasUnreadMessages: true,
+    //         unreadCount: (conv.unreadCount ?? 0) + 1,
+    //       }
+    //     } else {
+    //       conv = { ...conv, hasUnreadMessages: false, unreadCount: 0 }
+    //     }
+    //   } catch (e) {}
+
+    //   // ✅ properly update conversations array
+    //   const updatedConversations = state.conversations.some((c) => c.id === convId)
+    //     ? state.conversations.map((c) => (c.id === convId ? conv : c))
+    //     : [...state.conversations, conv]
+
+    //   // ✅ optionally sort by lastMessage.createdAt (most recent first)
+    //   updatedConversations.sort((a, b) => {
+    //     const aTime = a.lastMessage?.createdAt
+    //       ? new Date(a.lastMessage.createdAt).getTime()
+    //       : 0
+    //     const bTime = b.lastMessage?.createdAt
+    //       ? new Date(b.lastMessage.createdAt).getTime()
+    //       : 0
+    //     return bTime - aTime
+    //   })
+
+    //   return {
+    //     ...state,
+    //     chats,
+    //     conversations: updatedConversations,
+    //   }
+    // }
     case "ADD_MESSAGE": {
-      const { convId, message } = action
-      const chats = { ...state.chats }
-      const msgs = chats[convId] ? [...chats[convId]] : []
-      msgs.push(message)
-      chats[convId] = msgs
+      const { convId, message } = action;
 
-      const convIndex = state.conversations.findIndex((c) => c.id === convId)
-      let conv: Conversation
-      if (convIndex >= 0) {
-        conv = { ...state.conversations[convIndex], lastMessage: message }
+      // Update only the affected chat messages
+      const prevMsgs = state.chats[convId] ?? [];
+      const chats = {
+        ...state.chats,
+        [convId]: [...prevMsgs, message],
+      };
+
+      // Find existing conversation
+      const existingConv = state.conversations.find((c) => c.id === convId);
+      let conv: Conversation;
+
+      if (existingConv) {
+        conv = { ...existingConv, lastMessage: message };
       } else {
-        conv = { id: convId, type: { id: 0, lookupCode: "PERSONAL", lookupName: "Personal" }, conversationParticipants: [], lastMessage: message }
+        conv = {
+          id: convId,
+          type: { id: 0, lookupCode: "PERSONAL", lookupName: "Personal" },
+          conversationParticipants: [],
+          lastMessage: message,
+        };
       }
 
-      // if the incoming message is for a conversation that is not currently active,
-      // mark it as having unread messages and increment unreadCount. If the conversation
-      // is active, clear unread indicators.
-      try {
-        const isActive = String(state.activeConversationId) === String(convId)
-        if (!isActive) {
-          conv = { ...conv, hasUnreadMessages: true, unreadCount: (conv.unreadCount ?? 0) + 1 }
-        } else {
-          conv = { ...conv, hasUnreadMessages: false, unreadCount: 0 }
-        }
-      } catch (e) {
-        // ignore
-      }
-      const otherConvs = state.conversations.filter((c) => c.id !== convId)
-      // const conversations = sortConversations([conv, ...otherConvs])
-      const conversations = state.conversations;
+      // Unread logic
+      const isActive = String(state.activeConversationId) === String(convId);
+      conv = {
+        ...conv,
+        hasUnreadMessages: !isActive,
+        unreadCount: !isActive ? (conv.unreadCount ?? 0) + 1 : 0,
+      };
 
-      return { ...state, chats, conversations }
+      // Move this conversation to the top
+      const updatedConversations = [
+        conv,
+        ...state.conversations.filter((c) => c.id !== convId),
+      ];
+
+      return {
+        ...state,
+        chats,
+        conversations: updatedConversations,
+      };
     }
+
+
+
     case "EDIT_MESSAGE": {
       const { convId, message } = action
       const chats = { ...state.chats }

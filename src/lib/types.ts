@@ -104,3 +104,11 @@ export interface ChatState {
 }
 
 export type SocketEventPayload = unknown
+
+
+export interface SocketPayload{
+  action: string;
+  data: unknown;
+  file?: string;      // base64 string
+  fileName?: string;
+};

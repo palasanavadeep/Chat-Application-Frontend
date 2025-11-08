@@ -48,3 +48,31 @@ function formatMillisToLocalDateTime(millis : number) {
   return date.toLocaleString(); // uses the client’s local timezone by default
 }
 
+
+/**
+ * Convert a File object to a Base64-encoded data URL.
+ * 
+ * @param file - The File to read and encode as a Base64 data URL.
+ * @returns A Promise that resolves with the FileReader result which is typically
+ *          a string containing the data URL. In rare cases the result may be null
+ *          (e.g. if no data was read). The resolved value type is the raw
+ *          FileReader.result (string | ArrayBuffer | null), but when using
+ *          readAsDataURL it will normally be a string.
+ * @throws Will reject the returned Promise if FileReader encounters an error.
+ */
+export const getBase64StringFromFile = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = reader.result as string; // FileReader.result is string | ArrayBuffer
+      // Strip "data:<mime>;base64," prefix so you only get the base64 content
+      const base64 = result.split(",")[1];
+      resolve(base64);
+    };
+
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+};
+
