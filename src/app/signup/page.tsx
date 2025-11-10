@@ -165,7 +165,7 @@ export default function SignUpPage() {
                     {/* Register Button */}
                     <div className="mt-8 flex flex-col items-center space-y-2">
                         <Button
-                            className="w-full md:w-1/2 bg-blue-500 hover:bg-blue-600 text-white"
+                            className="w-full md:w-1/2 bg-blue-500 hover:bg-blue-600 text-white hover:cursor-pointer"
                             onClick={handleRegister}
                             disabled={loading}
                         >

@@ -9,6 +9,7 @@ import type { Action } from "@/lib/store/reducer";
 import { navigate } from "@/navigation";
 import { serialize } from "v8";
 import { getBase64StringFromFile } from "../utils";
+import { toast } from "sonner"
 
 
 // reducer and initialState are now provided by './reducer'
@@ -124,9 +125,10 @@ const useChatStore = create<StoreContextType>()(
           switch (type) {
             case "newMessage": {
               try {
-                const msg = payload.message ?? payload;
+                const msg : Message = payload.message ?? payload;
                 const convId = payload.conversationId ??  (msg && (msg.conversationId));
-                if (convId)
+                if (convId) {
+                  // update local store
                   set((s) => ({
                     state: reducer(s.state, {
                       type: "ADD_MESSAGE",
@@ -134,6 +136,21 @@ const useChatStore = create<StoreContextType>()(
                       message: msg,
                     } as Action),
                   }));
+
+                  // If this message belongs to the currently active conversation,
+                  // mark it as read on the server.
+                  try {
+                    const activeId = get().state.activeConversationId;
+                    if (activeId && String(activeId) === String(convId) && msg && (msg.id)) {
+                      const messageId = msg.id ;
+                      // fire-and-forget; server should push read receipts/backfill as needed
+                      try {
+                        // sendSocketAction is async and available on the store
+                        void get().sendSocketAction("markMessageAsRead", { messageId });
+                      } catch (e) {}
+                    }
+                  } catch (e) {}
+                }
               } catch (e) {}
               break;
             }
@@ -389,6 +406,16 @@ const useChatStore = create<StoreContextType>()(
                 } as Action),
               }));
               break;
+            }
+            case "ERROR" : {
+              toast.error(`Oops, there was an error processing your request. ERROR : \n ${data.message} `, {
+                style: {
+                  '--normal-bg': 'var(--background)',
+                  '--normal-text': 'var(--destructive)',
+                  '--normal-border': 'var(--destructive)'
+                } as React.CSSProperties,
+                position : "top-right"
+              })
             }
             default:
               break;

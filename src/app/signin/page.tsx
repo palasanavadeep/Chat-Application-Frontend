@@ -74,7 +74,7 @@ export default function SignInPage() {
             />
 
             <Button
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white transition-all"
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white transition-all hover:cursor-pointer"
               onClick={handleSignIn}
             >
               Sign In

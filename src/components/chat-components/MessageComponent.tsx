@@ -244,14 +244,15 @@ const MessageComponent: React.FC<MessageProps> = ({
     <div
       className={`flex ${
         isCurrentUser ? "justify-end" : "justify-start"
-      } my-2 px-3`}
+      } my-2 px-1 justify-end`}
     >
       <ContextMenu>
         <ContextMenuTrigger>
           <Card
-            className={`relative max-w-[75%] rounded-2xl px-4 py-3 shadow-sm transition-all
-            ${isCurrentUser ? "bg-primary text-primary-foreground" : "bg-muted"}
-          `}
+              className={`relative rounded-2xl px-4 py-3 shadow-sm transition-all
+              ${isCurrentUser ? "bg-primary text-primary-foreground ml-auto" : "bg-muted mr-auto"}
+              max-w-[75%]
+            `}
           >
             {/* Editing Mode */}
             {isEditing ? (
@@ -293,7 +294,7 @@ const MessageComponent: React.FC<MessageProps> = ({
                   <img
                     src={attachmentSrc}
                     alt="Attachment"
-                    className="mt-2 rounded-lg max-h-48 object-contain"
+                    className="mt-1 rounded-lg max-h-52 object-contain"
                   />
                 )}
 

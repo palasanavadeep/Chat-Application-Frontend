@@ -12,12 +12,29 @@ export default function ConversationPage() {
   // conversation.id may be a number or string; route param `id` is a string.
     // normalize both to string when comparing so the find works reliably.
   const  conversation = useChatStore((s) => s.state.conversations.find((c) => String(c.id) === String(id)))
+  const {sendSocketAction} = useChatStore();
+  const addOrUpdateConversation = useChatStore((s) => s.addOrUpdateConversation)
   
   useEffect(() => {
     try {
       setActiveConversation(id ?? null)
-      // console.log(conversation);
-      // console.log(id);
+
+      // if conversation had unread messages, clear them locally and inform server
+      try {
+        if (conversation?.hasUnreadMessages) {
+          // update local store so UI updates immediately
+          addOrUpdateConversation({ ...conversation, hasUnreadMessages: false, unreadCount: 0 })
+        }
+      } catch (e) {}
+
+      // notify server to mark messages as read for this conversation
+      try {
+        sendSocketAction(
+          "markConversationMessagesAsRead",
+          { conversationId: conversation?.id }
+        );
+      } catch (e) {}
+      
     } catch (e) {}
     return () => {
       try {

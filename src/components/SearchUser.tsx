@@ -35,7 +35,7 @@ export default function SearchUser({
       }
     } catch (e) {}
 
-    const tid = window.setTimeout(() => setLoading(false), 8000);
+    const tid = window.setTimeout(() => setLoading(false), 5000);
     searchTimeoutRef.current = tid;
   };
 

@@ -177,7 +177,7 @@ export default function ProfilePage() {
                                 Delete Account
                             </Button> */}
 
-                            <CustomizableAlertDialog
+                            {/* <CustomizableAlertDialog
                                 actionName="Continue"
                                 onAction={handleDelete}
                                 triggerButtonLabel="Delete Account"
@@ -186,7 +186,7 @@ export default function ProfilePage() {
                                     This will permanently delete your account and remove your data 
                                     from our servers.`}
                                 className=""
-                            />
+                            /> */}
                         </div>
                     </div>
                 </CardContent>
