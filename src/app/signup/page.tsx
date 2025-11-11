@@ -44,8 +44,7 @@ export default function SignUpPage() {
             const response = await fetch(
                 `${process.env.NEXT_PUBLIC_BACKEND_SERVER_URL}/auth/register`, {
                 method: "POST",
-                body: formData,
-                credentials : "include"
+                body: formData
             });
             const responseData = await response.json();
             if (response.ok && responseData.success) {

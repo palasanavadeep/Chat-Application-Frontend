@@ -13,6 +13,6 @@ export const navigate = (path: string) => {
     routerRef.push(path);
   } else if (typeof window !== "undefined") {
     console.log("hard navigate")
-    // window.location.href = path;
+    window.location.href = path;
   }
 };

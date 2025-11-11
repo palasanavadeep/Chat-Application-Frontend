@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { User, ChatState, Conversation, Message, SocketPayload } from "@/lib/types";
+import type { User, ChatState, Conversation, Message, SocketPayload, ConversationParticipant } from "@/lib/types";
 import { initialState, reducer } from "@/lib/store/reducer";
 import { createWebSocket } from "@/lib/store/ws";
 import type { Action } from "@/lib/store/reducer";
@@ -33,6 +33,10 @@ type StoreContextType = {
   editMessage: (convId: string, message: Message) => void;
   deleteMessage: (convId: string, messageId: string) => void;
   removeConversation: (convId: string) => void;
+  // participant ops
+  addNewParticipant: (convId: string | number, participant: ConversationParticipant) => void;
+  updateParticipant: (convId: string | number, participant: ConversationParticipant) => void;
+  removeParticipant: (convId: string | number, participantId: string | number) => void;
   loadChats: () => Promise<void>;
   loadMessages: (convId: string) => void;
   setConversationFilter: (
@@ -280,16 +284,26 @@ const useChatStore = create<StoreContextType>()(
               } catch (e) {}
               break;
             }
-            case "removed_from_conversation": {
+            case "removedConversation": {
               try {
                 const convId = payload.convId ?? payload.conversationId;
-                if (convId)
+                if (convId){
+                  try {
+                    const active = get().state.activeConversationId;
+                    if (active && String(active) === String(convId)) {
+                      try { get().setActiveConversation(null); } catch (e) {}
+                      try { navigate("/chat"); } catch (e) {}
+                    }
+                  } catch (e) {}
+
                   set((s) => ({
                     state: reducer(s.state, {
                       type: "REMOVE_CONVERSATION",
                       convId,
                     } as Action),
                   }));
+                }
+
               } catch (e) {}
               break;
             }
@@ -407,6 +421,51 @@ const useChatStore = create<StoreContextType>()(
               }));
               break;
             }
+
+            case "newParticipant" : {
+              const convId = payload.conversationId;
+              const participant : ConversationParticipant = payload.participant;
+              set((s) => {
+                const conversations = s.state.conversations.map((c) => {
+                  if (String(c.id) !== String(convId)) return c
+                  const parts = c.conversationParticipants ? [...c.conversationParticipants] : []
+                  // avoid duplicates: check by participant.id or participant.user.id
+                  const exists = parts.find((p) => String(p?.id) === String(participant.id) || String(p?.user?.id) === String(participant.user?.id))
+                  if (exists) return { ...c, conversationParticipants: parts }
+                  return { ...c, conversationParticipants: [...parts, participant] }
+                })
+                return { state: { ...s.state, conversations } }
+              })
+              break;
+            }
+            case "removedParticipant" : {
+              const convId = payload.conversationId;
+              const participantId = payload.participantId;
+              set((s) => {
+                const conversations = s.state.conversations.map((c) => {
+                  if (String(c.id) !== String(convId)) return c
+                  const parts = (c.conversationParticipants ?? []).filter((p) => !(String(p?.id) === String(participantId) || String(p?.user?.id) === String(participantId)))
+                  return { ...c, conversationParticipants: parts }
+                })
+                return { state: { ...s.state, conversations } }
+              })
+              break;
+            }
+            case "updateParticipant" : {
+              const convId = payload.conversationId;
+              const participant : ConversationParticipant = payload.participant;
+              set((s) => {
+                const conversations = s.state.conversations.map((c) => {
+                  if (String(c.id) !== String(convId)) return c
+                  const parts = (c.conversationParticipants ?? []).map((p) =>
+                    (String(p?.id) === String(participant.id) || String(p?.user?.id) === String(participant.user?.id)) ? { ...p, ...participant } : p
+                  )
+                  return { ...c, conversationParticipants: parts }
+                })
+                return { state: { ...s.state, conversations } }
+              })
+              break;
+            }
             case "ERROR" : {
               toast.error(`Oops, there was an error processing your request. ERROR : \n ${data.message} `, {
                 style: {
@@ -504,6 +563,42 @@ const useChatStore = create<StoreContextType>()(
         convId,
       } as Action),
     })),
+
+  // participant operations
+  addNewParticipant: (convId: string | number, participant: ConversationParticipant) =>
+    set((s) => {
+      const conversations = s.state.conversations.map((c) => {
+        if (String(c.id) !== String(convId)) return c
+        const parts = c.conversationParticipants ? [...c.conversationParticipants] : []
+        // avoid duplicates: check by participant.id or participant.user.id
+        const exists = parts.find((p) => String(p?.id) === String(participant.id) || String(p?.user?.id) === String(participant.user?.id))
+        if (exists) return { ...c, conversationParticipants: parts }
+        return { ...c, conversationParticipants: [...parts, participant] }
+      })
+      return { state: { ...s.state, conversations } }
+    }),
+
+  updateParticipant: (convId: string | number, participant: ConversationParticipant) =>
+    set((s) => {
+      const conversations = s.state.conversations.map((c) => {
+        if (String(c.id) !== String(convId)) return c
+        const parts = (c.conversationParticipants ?? []).map((p) =>
+          (String(p?.id) === String(participant.id) || String(p?.user?.id) === String(participant.user?.id)) ? { ...p, ...participant } : p
+        )
+        return { ...c, conversationParticipants: parts }
+      })
+      return { state: { ...s.state, conversations } }
+    }),
+
+  removeParticipant: (convId: string | number, participantId: string | number) =>
+    set((s) => {
+      const conversations = s.state.conversations.map((c) => {
+        if (String(c.id) !== String(convId)) return c
+        const parts = (c.conversationParticipants ?? []).filter((p) => !(String(p?.id) === String(participantId) || String(p?.user?.id) === String(participantId)))
+        return { ...c, conversationParticipants: parts }
+      })
+      return { state: { ...s.state, conversations } }
+    }),
 
   // search results helpers
   setSearchResults: (users: User[]) => {
