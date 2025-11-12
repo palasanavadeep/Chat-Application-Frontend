@@ -17,221 +17,181 @@ import { navigate } from "@/navigation";
 import { getBase64StringFromFile } from "../utils";
 import { toast } from "sonner";
 
-// reducer and initialState are provided by './reducer'
-
+// Interface defining the shape of the Zustand store
 type StoreContextType = {
   state: ChatState;
-  // auth
-  setAuthFromLogin: (user: User, token: string) => void;
-  clearAuth: () => void;
-  // ui
-  setActiveConversation: (convId?: string | null) => void;
-  // search results helpers
-  setSearchResults: (users: User[]) => void;
-  clearSearchResults: () => void;
-  // socket
-  connectSocket: () => void;
-  disconnectSocket: () => void;
-  // actions
-  addMessage: (convId: string, message: Message) => void;
-  addOrUpdateConversation: (conv: Conversation) => void;
-  editMessage: (convId: string, message: Message) => void;
-  deleteMessage: (convId: string, messageId: string) => void;
-  removeConversation: (convId: string) => void;
-  // participant ops
-  addNewParticipant: (
-    convId: string | number,
-    participant: ConversationParticipant
-  ) => void;
-  updateParticipant: (
-    convId: string | number,
-    participant: ConversationParticipant
-  ) => void;
-  removeParticipant: (
-    convId: string | number,
-    participantId: string | number
-  ) => void;
-  loadChats: () => Promise<void>;
-  loadMessages: (convId: string) => void;
-  setConversationFilter: (
-    filter: "all" | "group" | "personal" | "broadcast"
-  ) => void;
-  // send an arbitrary websocket action (client -> server); returns true if sent
-  sendSocketAction: (
-    action: string,
-    data?: unknown,
-    fileObj?: File | null
-  ) => Promise<boolean>;
+  setAuthFromLogin: (user: User, token: string) => void; // Sets user auth
+  clearAuth: () => void; // Clears auth and resets state
+  setActiveConversation: (convId?: string | null) => void; // Sets active conversation
+  setSearchResults: (users: User[]) => void; // Sets user search results
+  clearSearchResults: () => void; // Clears search results
+  connectSocket: () => void; // Establishes WebSocket connection
+  disconnectSocket: () => void; // Closes WebSocket connection
+  addMessage: (convId: string, message: Message) => void; // Adds a message
+  addOrUpdateConversation: (conv: Conversation) => void; // Adds/updates a conversation
+  editMessage: (convId: string, message: Message) => void; // Edits a message
+  deleteMessage: (convId: string, messageId: string) => void; // Deletes a message
+  removeConversation: (convId: string) => void; // Removes a conversation
+  addNewParticipant: (convId: string | number, participant: ConversationParticipant) => void; // Adds a participant
+  updateParticipant: (convId: string | number, participant: ConversationParticipant) => void; // Updates a participant
+  removeParticipant: (convId: string | number, participantId: string | number) => void; // Removes a participant
+  loadChats: () => Promise<void>; // Loads user conversations
+  loadMessages: (convId: string) => void; // Loads messages for a conversation
+  setConversationFilter: (filter: "all" | "group" | "personal" | "broadcast") => void; // Sets conversation filter
+  sendSocketAction: (action: string, data?: unknown, fileObj?: File | null) => Promise<boolean>; // Sends WebSocket action
 };
 
-// module-scoped refs for websocket and pending requests (persist across hook calls)
+// Module-scoped refs for WebSocket and reconnect attempts
 let wsRef: WebSocket | null = null;
 let reconnectCounter = 0;
 
+// Creates the Zustand store with devtools for debugging
 const useChatStore = create<StoreContextType>()(
   devtools(
     (set, get) => ({
       state: initialState,
 
-      // auth
+      // Sets user authentication, persists to localStorage
       setAuthFromLogin: (user: User, token: string) => {
+        if (!user.id || !token) {
+          console.error("Invalid auth data: missing user ID or token");
+          return;
+        }
         const safeUser: User = { ...user };
         try {
-          if (Object.prototype.hasOwnProperty.call(safeUser, "password")) {
-            try {
-              delete (safeUser as unknown as Record<string, unknown>).password;
-            } catch (e) {}
+          // Remove password for security
+          if ("password" in safeUser) {
+            delete (safeUser as any).password;
           }
-        } catch (e) {}
-        set((s) => ({ state: { ...s.state, user: safeUser, token } }));
-        try {
+          set((s) => ({
+            state: reducer(s.state, {
+              type: "SET_AUTH",
+              user: safeUser,
+              token,
+            } as Action),
+          }));
           if (typeof window !== "undefined") {
             localStorage.setItem("chat_app_user", JSON.stringify(safeUser));
             localStorage.setItem("chat_app_token", token);
           }
-        } catch (e) {}
+        } catch (error) {
+          console.error("Failed to set auth:", error instanceof Error ? error.message : "Unknown error");
+        }
       },
 
+      // Clears auth, closes WebSocket, and resets state
       clearAuth: () => {
         try {
           if (wsRef) {
-            try {
-              wsRef.close();
-            } catch (e) {}
+            wsRef.close();
             wsRef = null;
           }
-        } catch (e) {}
-        try {
           if (typeof window !== "undefined") {
             localStorage.removeItem("chat_app_user");
             localStorage.removeItem("chat_app_token");
           }
-        } catch (e) {}
-        set(() => ({ state: { ...initialState } }));
+          set(() => ({ state: { ...initialState } }));
+        } catch (error) {
+          console.error("Failed to clear auth:", error instanceof Error ? error.message : "Unknown error");
+        }
       },
 
-      // socket management
+      // Establishes WebSocket connection for real-time updates
       connectSocket: () => {
         const token = get().state.token;
-        if (!token) return;
+        if (!token) {
+          console.debug("No token, skipping WebSocket connection");
+          return;
+        }
         try {
-          if (wsRef) wsRef.close();
-        } catch (e) {}
-        try {
+          if (wsRef) {
+            wsRef.close();
+            wsRef = null;
+          }
           const ws = createWebSocket(token);
           wsRef = ws;
 
           ws.onopen = () => {
             reconnectCounter = 0;
-            set((s) => ({ state: { ...s.state, socketConnected: true } }));
+            set((s) => ({
+              state: reducer(s.state, { type: "SOCKET_CONNECTED" } as Action),
+            }));
             try {
-              // Only request the full conversation list if we haven't loaded it yet.
-              const loaded = get().state.chatsLoaded;
-              if (!loaded) {
-                ws.send(
-                  JSON.stringify({ action: "getUserConversations", data: {} })
-                );
+              // Load conversations if not already loaded
+              if (!get().state.chatsLoaded) {
+                ws.send(JSON.stringify({ action: "getUserConversations", data: {} }));
               }
-            } catch (e) {
-              // ignore
+            } catch (error) {
+              console.error("Failed to send initial WebSocket request:", error instanceof Error ? error.message : "Unknown error");
             }
           };
 
           ws.onmessage = (ev) => {
             try {
               const data = JSON.parse(ev.data);
+              if (!data || typeof data !== "object") {
+                throw new Error("Invalid WebSocket message format");
+              }
               const type = data.action ?? data.type;
               const payload = data.data ?? data.payload ?? data;
 
               switch (type) {
                 case "newMessage": {
-                  try {
-                    const msg: Message = payload.message ?? payload;
-                    const convId =
-                      payload.conversationId ?? (msg && msg.conversationId);
-                    if (convId) {
-                      // update local store
-                      set((s) => ({
-                        state: reducer(s.state, {
-                          type: "ADD_MESSAGE",
-                          convId,
-                          message: msg,
-                        } as Action),
-                      }));
-
-                      // If this message belongs to the currently active conversation,
-                      // mark it as read on the server.
-                      try {
-                        const activeId = get().state.activeConversationId;
-                        if (
-                          activeId &&
-                          String(activeId) === String(convId) &&
-                          msg &&
-                          msg.id
-                        ) {
-                          const messageId = msg.id;
-                          // fire-and-forget; server should push read receipts/backfill as needed
-                          try {
-                            // sendSocketAction is async and available on the store
-                            void get().sendSocketAction("markMessageAsRead", {
-                              messageId,
-                            });
-                          } catch (e) {}
-                        }
-                      } catch (e) {}
+                  const msg: Message = payload.message ?? payload;
+                  const convId = payload.conversationId ?? msg?.conversationId;
+                  if (!convId || !msg?.id) {
+                    console.warn("Invalid newMessage payload: missing convId or message ID");
+                    break;
+                  }
+                  set((s) => ({
+                    state: reducer(s.state, {
+                      type: "ADD_MESSAGE",
+                      convId,
+                      message: msg,
+                    } as Action),
+                  }));
+                  // Mark message as read if in active conversation
+                  const activeId = get().state.activeConversationId;
+                  if (activeId && String(activeId) === String(convId)) {
+                    try {
+                      void get().sendSocketAction("markMessageAsRead", { messageId: msg.id });
+                    } catch (error) {
+                      console.warn("Failed to mark message as read:", error);
                     }
-                  } catch (e) {}
+                  }
                   break;
                 }
                 case "newConversation": {
-                  const conv = payload;
-                  if (!conv) {
-                    console.warn("No conversation in payload");
+                  const conv: Conversation = payload;
+                  if (!conv?.id) {
+                    console.warn("Invalid newConversation payload: missing conversation");
                     break;
                   }
-
-                  // Update Zustand store
                   set((s) => ({
                     state: reducer(s.state, {
                       type: "ADD_OR_UPDATE_CONVERSATION",
                       conv,
                     } as Action),
                   }));
-
                   const meId = get().state.user?.id;
                   const createdById = conv.createdBy?.id;
-
-                  // Navigate only if the current user created the conversation
-                  if (
-                    meId &&
-                    createdById &&
-                    String(meId) === String(createdById)
-                  ) {
+                  if (meId && createdById && String(meId) === String(createdById)) {
                     try {
-                      get().setActiveConversation(conv.id);
-                    } catch (e) {
-                      console.error("Failed to set active conversation:", e);
+                      get().setActiveConversation(String(conv?.id));
+                      // Navigation commented out to avoid unintended redirects
+                      // navigate(`/chat/${conv.id}`);
+                    } catch (error) {
+                      console.error("Failed to handle new conversation:", error instanceof Error ? error.message : "Unknown error");
                     }
-
-                    // if (conv.id) {
-                    //   console.log("Navigating to conversation:", conv.id);
-                    //   try {
-                    //     navigate(`/chat/${conv.id}`);
-                    //   } catch (e) {
-                    //     console.error("Navigation failed:", e);
-                    //   }
-                    // }
                   }
-
                   break;
                 }
                 case "updatedConversation": {
-                  const conv = payload;
-                  if (!conv) {
-                    console.warn("No conversation in payload");
+                  const conv: Conversation = payload;
+                  if (!conv?.id) {
+                    console.warn("Invalid updatedConversation payload: missing conversation");
                     break;
                   }
-                  // Update Zustand store
                   set((s) => ({
                     state: reducer(s.state, {
                       type: "ADD_OR_UPDATE_CONVERSATION",
@@ -241,142 +201,118 @@ const useChatStore = create<StoreContextType>()(
                   break;
                 }
                 case "editedMessage": {
-                  try {
-                    const msg = payload.message ?? payload;
-                    const convId =
-                      payload.convId ??
-                      payload.conversationId ??
-                      (msg && (msg.conversationId ?? msg.convId));
-                    if (convId)
-                      set((s) => ({
-                        state: reducer(s.state, {
-                          type: "EDIT_MESSAGE",
-                          convId,
-                          message: msg,
-                        } as Action),
-                      }));
-                  } catch (e) {}
+                  const msg = payload.message ?? payload;
+                  const convId = payload.convId ?? payload.conversationId ?? msg?.conversationId;
+                  if (!convId || !msg?.id) {
+                    console.warn("Invalid editedMessage payload: missing convId or message ID");
+                    break;
+                  }
+                  set((s) => ({
+                    state: reducer(s.state, {
+                      type: "EDIT_MESSAGE",
+                      convId,
+                      message: msg,
+                    } as Action),
+                  }));
                   break;
                 }
                 case "deletedMessage": {
-                  try {
-                    const messageId =
-                      payload.messageId ?? payload.id ?? payload.message?.id;
-                    const convId =
-                      payload.convId ??
-                      payload.conversationId ??
-                      payload.message?.conversationId;
-                    if (convId && messageId)
-                      set((s) => ({
-                        state: reducer(s.state, {
-                          type: "DELETE_MESSAGE",
-                          convId,
-                          messageId,
-                        } as Action),
-                      }));
-                  } catch (e) {}
+                  const messageId = payload.messageId ?? payload.id ?? payload.message?.id;
+                  const convId = payload.convId ?? payload.conversationId ?? payload.message?.conversationId;
+                  if (!convId || !messageId) {
+                    console.warn("Invalid deletedMessage payload: missing convId or messageId");
+                    break;
+                  }
+                  set((s) => ({
+                    state: reducer(s.state, {
+                      type: "DELETE_MESSAGE",
+                      convId,
+                      messageId,
+                    } as Action),
+                  }));
                   break;
                 }
                 case "removedConversation": {
-                  try {
-                    const convId = payload.convId ?? payload.conversationId;
-                    if (convId) {
-                      try {
-                        const active = get().state.activeConversationId;
-                        if (active && String(active) === String(convId)) {
-                          try {
-                            get().setActiveConversation(null);
-                          } catch (e) {}
-                          try {
-                            navigate("/chat");
-                          } catch (e) {}
-                        }
-                      } catch (e) {}
-
-                      set((s) => ({
-                        state: reducer(s.state, {
-                          type: "REMOVE_CONVERSATION",
-                          convId,
-                        } as Action),
-                      }));
+                  const convId = payload.convId ?? payload.conversationId;
+                  if (!convId) {
+                    console.warn("Invalid removedConversation payload: missing convId");
+                    break;
+                  }
+                  const activeId = get().state.activeConversationId;
+                  if (activeId && String(activeId) === String(convId)) {
+                    try {
+                      get().setActiveConversation(null);
+                      navigate("/chat");
+                    } catch (error) {
+                      console.error("Failed to handle removed conversation:", error instanceof Error ? error.message : "Unknown error");
                     }
-                  } catch (e) {}
+                  }
+                  set((s) => ({
+                    state: reducer(s.state, {
+                      type: "REMOVE_CONVERSATION",
+                      convId,
+                    } as Action),
+                  }));
                   break;
                 }
                 case "getAllMessagesResponse": {
-                  const messages: Message[] = Array.isArray(payload)
-                    ? payload
-                    : payload.messages ?? [];
-
-                  const convId: string | undefined =
-                    payload.conversationId ?? payload.convId;
-                  if (convId)
-                    set((s) => ({
-                      state: reducer(s.state, {
-                        type: "LOAD_MESSAGES",
-                        convId,
-                        messages,
-                      } as Action),
-                    }));
+                  const messages: Message[] = Array.isArray(payload) ? payload : payload.messages ?? [];
+                  const convId: string | undefined = payload.conversationId ?? payload.convId;
+                  if (!convId) {
+                    console.warn("Invalid getAllMessagesResponse payload: missing convId");
+                    break;
+                  }
+                  set((s) => ({
+                    state: reducer(s.state, {
+                      type: "LOAD_MESSAGES",
+                      convId,
+                      messages,
+                    } as Action),
+                  }));
                   break;
                 }
                 case "getUserConversationsResponse": {
-                  const convs = Array.isArray(payload)
-                    ? payload
-                    : payload.conversations ?? [];
-                  // debug: log incoming conversations and ensure reducer is applied
-                  console.log(
-                    "[WS] getUserConversationsResponse payload:",
-                    convs
-                  );
+                  const convs = Array.isArray(payload) ? payload : payload.conversations ?? [];
                   try {
-                    const next = reducer(get().state, {
-                      type: "LOAD_CHATS",
-                      conversations: convs,
-                      chats: {},
-                    } as Action);
-                    set(() => ({ state: next }));
-                    
-                    console.log(
-                      "[Store] conversations after LOAD_CHATS:",
-                      get().state.conversations
-                    );
-                  } catch (err) {
-                    console.error("Failed to apply LOAD_CHATS reducer:", err);
+                    set((s) => ({
+                      state: reducer(s.state, {
+                        type: "LOAD_CHATS",
+                        conversations: convs,
+                        chats: {},
+                      } as Action),
+                    }));
+                    console.debug("[Store] Conversations loaded:", convs.length);
+                  } catch (error) {
+                    console.error("Failed to load conversations:", error instanceof Error ? error.message : "Unknown error");
                   }
-
                   break;
                 }
                 case "getConversationResponse": {
-                  const conv = payload;
-                  if (conv)
-                    set((s) => ({
-                      state: reducer(s.state, {
-                        type: "ADD_OR_UPDATE_CONVERSATION",
-                        conv,
-                      } as Action),
-                    }));
+                  const conv: Conversation = payload;
+                  if (!conv?.id) {
+                    console.warn("Invalid getConversationResponse payload: missing conversation");
+                    break;
+                  }
+                  set((s) => ({
+                    state: reducer(s.state, {
+                      type: "ADD_OR_UPDATE_CONVERSATION",
+                      conv,
+                    } as Action),
+                  }));
                   break;
                 }
                 case "getProfileResponse": {
-                  const prof = payload;
+                  const prof: User = payload;
                   const curUser = get().state.user;
-                  if (prof && curUser && prof.id === curUser.id) {
-                    const safeProf: User = { ...prof };
-                    try {
-                      if (
-                        Object.prototype.hasOwnProperty.call(
-                          safeProf,
-                          "password"
-                        )
-                      ) {
-                        try {
-                          delete (
-                            safeProf as unknown as Record<string, unknown>
-                          ).password;
-                        } catch (e) {}
-                      }
-                    } catch (e) {}
+                  if (!prof?.id || !curUser || prof.id !== curUser.id) {
+                    console.warn("Invalid getProfileResponse payload or user mismatch");
+                    break;
+                  }
+                  const safeProf: User = { ...prof };
+                  try {
+                    if ("password" in safeProf) {
+                      delete (safeProf as any).password;
+                    }
                     set((s) => ({
                       state: reducer(s.state, {
                         type: "SET_AUTH",
@@ -384,20 +320,16 @@ const useChatStore = create<StoreContextType>()(
                         token: s.state.token ?? "",
                       } as Action),
                     }));
-                    try {
-                      if (typeof window !== "undefined")
-                        localStorage.setItem(
-                          "chat_app_user",
-                          JSON.stringify(safeProf)
-                        );
-                    } catch (e) {}
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem("chat_app_user", JSON.stringify(safeProf));
+                    }
+                  } catch (error) {
+                    console.error("Failed to update profile:", error instanceof Error ? error.message : "Unknown error");
                   }
                   break;
                 }
                 case "searchUserResponse": {
-                  const users = Array.isArray(payload)
-                    ? payload
-                    : payload.users ?? [];
+                  const users: User[] = Array.isArray(payload) ? payload : payload.users ?? [];
                   set((s) => ({
                     state: reducer(s.state, {
                       type: "SET_SEARCH_RESULTS",
@@ -406,11 +338,9 @@ const useChatStore = create<StoreContextType>()(
                   }));
                   break;
                 }
-                // not using for now
                 case "getUserByUsername": {
-                  // server returns a single user object or null
                   const u = payload ?? null;
-                  const users = u ? [u] : [];
+                  const users: User[] = u ? [u] : [];
                   set((s) => ({
                     state: reducer(s.state, {
                       type: "SET_SEARCH_RESULTS",
@@ -419,98 +349,81 @@ const useChatStore = create<StoreContextType>()(
                   }));
                   break;
                 }
-
                 case "newParticipant": {
                   const convId = payload.conversationId;
-                  const participant: ConversationParticipant =
-                    payload.participant;
-                  set((s) => {
-                    const conversations = s.state.conversations.map((c) => {
-                      if (String(c.id) !== String(convId)) return c;
-                      const parts = c.conversationParticipants
-                        ? [...c.conversationParticipants]
-                        : [];
-                      // avoid duplicates: check by participant.id or participant.user.id
-                      const exists = parts.find(
-                        (p) =>
-                          String(p?.id) === String(participant.id) ||
-                          String(p?.user?.id) === String(participant.user?.id)
-                      );
-                      if (exists)
-                        return { ...c, conversationParticipants: parts };
-                      return {
-                        ...c,
-                        conversationParticipants: [...parts, participant],
-                      };
-                    });
-                    return { state: { ...s.state, conversations } };
-                  });
+                  const participant: ConversationParticipant = payload.participant;
+                  if (!convId || !participant?.id) {
+                    console.warn("Invalid newParticipant payload: missing convId or participant");
+                    break;
+                  }
+                  set((s) => ({
+                    state: reducer(s.state, {
+                      type: "ADD_PARTICIPANT",
+                      convId,
+                      participant,
+                    } as Action),
+                  }));
+                  break;
+                }
+                case "updateParticipant": {
+                  const convId = payload.conversationId;
+                  const participant: ConversationParticipant = payload.participant;
+                  if (!convId || !participant?.id) {
+                    console.warn("Invalid updateParticipant payload: missing convId or participant");
+                    break;
+                  }
+                  set((s) => ({
+                    state: reducer(s.state, {
+                      type: "UPDATE_PARTICIPANT",
+                      convId,
+                      participant,
+                    } as Action),
+                  }));
                   break;
                 }
                 case "removedParticipant": {
                   const convId = payload.conversationId;
                   const participantId = payload.participantId;
-                  set((s) => {
-                    const conversations = s.state.conversations.map((c) => {
-                      if (String(c.id) !== String(convId)) return c;
-                      const parts = (c.conversationParticipants ?? []).filter(
-                        (p) =>
-                          !(
-                            String(p?.id) === String(participantId) ||
-                            String(p?.user?.id) === String(participantId)
-                          )
-                      );
-                      return { ...c, conversationParticipants: parts };
-                    });
-                    return { state: { ...s.state, conversations } };
-                  });
-                  break;
-                }
-                case "updateParticipant": {
-                  const convId = payload.conversationId;
-                  const participant: ConversationParticipant =
-                    payload.participant;
-                  set((s) => {
-                    const conversations = s.state.conversations.map((c) => {
-                      if (String(c.id) !== String(convId)) return c;
-                      const parts = (c.conversationParticipants ?? []).map(
-                        (p) =>
-                          String(p?.id) === String(participant.id) ||
-                          String(p?.user?.id) === String(participant.user?.id)
-                            ? { ...p, ...participant }
-                            : p
-                      );
-                      return { ...c, conversationParticipants: parts };
-                    });
-                    return { state: { ...s.state, conversations } };
-                  });
+                  if (!convId || !participantId) {
+                    console.warn("Invalid removedParticipant payload: missing convId or participantId");
+                    break;
+                  }
+                  set((s) => ({
+                    state: reducer(s.state, {
+                      type: "REMOVE_PARTICIPANT",
+                      convId,
+                      participantId,
+                    } as Action),
+                  }));
                   break;
                 }
                 case "ERROR": {
-                  toast.error(
-                    `Oops, there was an error processing your request. ERROR : \n ${data.message} `,
-                    {
-                      style: {
-                        "--normal-bg": "var(--background)",
-                        "--normal-text": "var(--destructive)",
-                        "--normal-border": "var(--destructive)",
-                      } as React.CSSProperties,
-                      position: "top-right",
-                    }
-                  );
+                  const message = data.message || "Unknown server error";
+                  toast.error(`Error: ${message}`, {
+                    style: {
+                      "--normal-bg": "var(--background)",
+                      "--normal-text": "var(--destructive)",
+                      "--normal-border": "var(--destructive)",
+                    } as React.CSSProperties,
+                    position: "top-right",
+                  });
+                  break;
                 }
                 default:
+                  console.debug("Unhandled WebSocket message type:", type);
                   break;
               }
-            } catch (err) {
-              // ignore
+            } catch (error) {
+              console.error("Failed to process WebSocket message:", error instanceof Error ? error.message : "Unknown error");
             }
           };
 
           ws.onclose = () => {
-            set((s) => ({ state: { ...s.state, socketConnected: false } }));
+            set((s) => ({
+              state: reducer(s.state, { type: "SOCKET_DISCONNECTED" } as Action),
+            }));
             wsRef = null;
-            reconnectCounter = reconnectCounter + 1;
+            reconnectCounter += 1;
             const delay = Math.min(30000, 1000 * Math.pow(2, reconnectCounter));
             setTimeout(() => {
               const tokenNow = get().state.token;
@@ -519,135 +432,164 @@ const useChatStore = create<StoreContextType>()(
           };
 
           ws.onerror = () => {
-            // let onclose handle
+            console.warn("WebSocket error occurred, handled by onclose");
           };
-        } catch (e) {
-          // ignore connect errors
+        } catch (error) {
+          console.error("Failed to connect WebSocket:", error instanceof Error ? error.message : "Unknown error");
         }
       },
 
+      // Closes WebSocket connection
       disconnectSocket: () => {
         try {
-          if (wsRef) wsRef.close();
-        } catch (e) {}
-        wsRef = null;
-        set((s) => ({ state: { ...s.state, socketConnected: false } }));
+          if (wsRef) {
+            wsRef.close();
+            wsRef = null;
+          }
+          set((s) => ({
+            state: reducer(s.state, { type: "SOCKET_DISCONNECTED" } as Action),
+          }));
+        } catch (error) {
+          console.error("Failed to disconnect WebSocket:", error instanceof Error ? error.message : "Unknown error");
+        }
       },
 
-      // UI helpers
+      // Sets active conversation and loads its messages
       setActiveConversation: (convId?: string | null) => {
-        set((s) => ({
-          state: reducer(s.state, {
-            type: "SET_ACTIVE_CONVERSATION",
-            convId,
-          } as Action),
-        }));
         try {
-          if (convId) get().loadMessages(convId);
-        } catch (e) {}
+          set((s) => ({
+            state: reducer(s.state, {
+              type: "SET_ACTIVE_CONVERSATION",
+              convId,
+            } as Action),
+          }));
+          if (convId) {
+            get().loadMessages(convId);
+          }
+        } catch (error) {
+          console.error("Failed to set active conversation:", error instanceof Error ? error.message : "Unknown error");
+        }
       },
 
-      // actions
-      addMessage: (convId: string, message: Message) =>
+      // Action: Adds a message to a conversation
+      addMessage: (convId: string, message: Message) => {
+        if (!convId || !message?.id) {
+          console.error("Invalid addMessage data: missing convId or message ID");
+          return;
+        }
         set((s) => ({
           state: reducer(s.state, {
             type: "ADD_MESSAGE",
             convId,
             message,
           } as Action),
-        })),
-      addOrUpdateConversation: (conv: Conversation) =>
+        }));
+      },
+
+      // Action: Adds or updates a conversation
+      addOrUpdateConversation: (conv: Conversation) => {
+        if (!conv?.id) {
+          console.error("Invalid addOrUpdateConversation data: missing conversation ID");
+          return;
+        }
         set((s) => ({
           state: reducer(s.state, {
             type: "ADD_OR_UPDATE_CONVERSATION",
             conv,
           } as Action),
-        })),
-      editMessage: (convId: string, message: Message) =>
+        }));
+      },
+
+      // Action: Edits a message
+      editMessage: (convId: string, message: Message) => {
+        if (!convId || !message?.id) {
+          console.error("Invalid editMessage data: missing convId or message ID");
+          return;
+        }
         set((s) => ({
           state: reducer(s.state, {
             type: "EDIT_MESSAGE",
             convId,
             message,
           } as Action),
-        })),
-      deleteMessage: (convId: string, messageId: string) =>
+        }));
+      },
+
+      // Action: Deletes a message
+      deleteMessage: (convId: string, messageId: string) => {
+        if (!convId || !messageId) {
+          console.error("Invalid deleteMessage data: missing convId or messageId");
+          return;
+        }
         set((s) => ({
           state: reducer(s.state, {
             type: "DELETE_MESSAGE",
             convId,
             messageId,
           } as Action),
-        })),
-      removeConversation: (convId: string) =>
+        }));
+      },
+
+      // Action: Removes a conversation
+      removeConversation: (convId: string) => {
+        if (!convId) {
+          console.error("Invalid removeConversation data: missing convId");
+          return;
+        }
         set((s) => ({
           state: reducer(s.state, {
             type: "REMOVE_CONVERSATION",
             convId,
           } as Action),
-        })),
+        }));
+      },
 
-      // participant operations
-      addNewParticipant: (
-        convId: string | number,
-        participant: ConversationParticipant
-      ) =>
-        set((s) => {
-          const conversations = s.state.conversations.map((c) => {
-            if (String(c.id) !== String(convId)) return c;
-            const parts = c.conversationParticipants
-              ? [...c.conversationParticipants]
-              : [];
-            // avoid duplicates: check by participant.id or participant.user.id
-            const exists = parts.find(
-              (p) =>
-                String(p?.id) === String(participant.id) ||
-                String(p?.user?.id) === String(participant.user?.id)
-            );
-            if (exists) return { ...c, conversationParticipants: parts };
-            return { ...c, conversationParticipants: [...parts, participant] };
-          });
-          return { state: { ...s.state, conversations } };
-        }),
+      // Action: Adds a participant to a conversation
+      addNewParticipant: (convId: string | number, participant: ConversationParticipant) => {
+        if (!convId || !participant?.id) {
+          console.error("Invalid add participant data: missing convId or participant ID");
+          return;
+        }
+        set((s) => ({
+          state: reducer(s.state, {
+            type: "ADD_PARTICIPANT",
+            convId,
+            participant,
+          } as Action),
+        }));
+      },
 
-      updateParticipant: (
-        convId: string | number,
-        participant: ConversationParticipant
-      ) =>
-        set((s) => {
-          const conversations = s.state.conversations.map((c) => {
-            if (String(c.id) !== String(convId)) return c;
-            const parts = (c.conversationParticipants ?? []).map((p) =>
-              String(p?.id) === String(participant.id) ||
-              String(p?.user?.id) === String(participant.user?.id)
-                ? { ...p, ...participant }
-                : p
-            );
-            return { ...c, conversationParticipants: parts };
-          });
-          return { state: { ...s.state, conversations } };
-        }),
+      // Action: Updates a participant's details
+      updateParticipant: (convId: string | number, participant: ConversationParticipant) => {
+        if (!convId || !participant?.id) {
+          console.error("Invalid update participant data: missing convId or participant ID");
+          return;
+        }
+        set((s) => ({
+          state: reducer(s.state, {
+            type: "UPDATE_PARTICIPANT",
+            convId,
+            participant,
+          } as Action),
+        }));
+      },
 
-      removeParticipant: (
-        convId: string | number,
-        participantId: string | number
-      ) =>
-        set((s) => {
-          const conversations = s.state.conversations.map((c) => {
-            if (String(c.id) !== String(convId)) return c;
-            const parts = (c.conversationParticipants ?? []).filter(
-              (p) =>
-                !(
-                  String(p?.id) === String(participantId) ||
-                  String(p?.user?.id) === String(participantId)
-                )
-            );
-            return { ...c, conversationParticipants: parts };
-          });
-          return { state: { ...s.state, conversations } };
-        }),
+      // Action: Removes a participant from a conversation
+      removeParticipant: (convId: string | number, participantId: string | number) => {
+        if (!convId || !participantId) {
+          console.error("Invalid remove participant data: missing convId or participantId");
+          return;
+        }
+        set((s) => ({
+          state: reducer(s.state, {
+            type: "REMOVE_PARTICIPANT",
+            convId,
+            participantId,
+          } as Action),
+        }));
+      },
 
-      // search results helpers
+      // Action: Sets user search results
       setSearchResults: (users: User[]) => {
         set((s) => ({
           state: reducer(s.state, {
@@ -656,6 +598,8 @@ const useChatStore = create<StoreContextType>()(
           } as Action),
         }));
       },
+
+      // Action: Clears user search results
       clearSearchResults: () => {
         set((s) => ({
           state: reducer(s.state, {
@@ -665,20 +609,31 @@ const useChatStore = create<StoreContextType>()(
         }));
       },
 
+      // Loads all user conversations via WebSocket
       loadChats: async () => {
         const token = get().state.token;
-        if (!token) return;
+        if (!token) {
+          console.debug("No token, skipping loadChats");
+          return;
+        }
         try {
           const ws = wsRef;
           if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(
-              JSON.stringify({ action: "getUserConversations", data: {} })
-            );
+            ws.send(JSON.stringify({ action: "getUserConversations", data: {} }));
+          } else {
+            console.warn("WebSocket not connected, cannot load chats");
           }
-        } catch (e) {}
+        } catch (error) {
+          console.error("Failed to load chats:", error instanceof Error ? error.message : "Unknown error");
+        }
       },
 
+      // Loads messages for a specific conversation
       loadMessages: (convId: string) => {
+        if (!convId) {
+          console.error("Invalid convId for loadMessages");
+          return;
+        }
         try {
           const ws = wsRef;
           if (ws && ws.readyState === WebSocket.OPEN) {
@@ -688,13 +643,16 @@ const useChatStore = create<StoreContextType>()(
                 data: { conversationId: convId },
               })
             );
+          } else {
+            console.warn("WebSocket not connected, cannot load messages");
           }
-        } catch (e) {}
+        } catch (error) {
+          console.error("Failed to load messages:", error instanceof Error ? error.message : "Unknown error");
+        }
       },
 
-      setConversationFilter: (
-        filter: "all" | "group" | "personal" | "broadcast"
-      ) =>
+      // Sets conversation filter (e.g., all, group)
+      setConversationFilter: (filter: "all" | "group" | "personal" | "broadcast") =>
         set((s) => ({
           state: reducer(s.state, {
             type: "SET_CONVERSATION_FILTER",
@@ -702,34 +660,30 @@ const useChatStore = create<StoreContextType>()(
           } as Action),
         })),
 
-      sendSocketAction: async (
-        action: string,
-        data: unknown = {},
-        fileObj?: File | null
-      ) => {
+      // Sends a WebSocket action, optionally with a file
+      sendSocketAction: async (action: string, data: unknown = {}, fileObj?: File | null) => {
         try {
           const ws = wsRef;
-          if (ws && ws.readyState === WebSocket.OPEN) {
-            let payload: SocketPayload = { action, data };
-            if (fileObj) {
-              const base64File = await getBase64StringFromFile(fileObj);
-              payload = {
-                ...payload,
-                file: base64File,
-                fileName: fileObj.name,
-              };
-            }
-            ws.send(JSON.stringify(payload));
-            return true;
+          if (!ws || ws.readyState !== WebSocket.OPEN) {
+            console.warn("WebSocket not connected, cannot send action:", action);
+            return false;
           }
-        } catch (e) {}
-        return false;
+          let payload: SocketPayload = { action, data };
+          if (fileObj) {
+            const base64File = await getBase64StringFromFile(fileObj);
+            payload = { ...payload, file: base64File, fileName: fileObj.name };
+          }
+          ws.send(JSON.stringify(payload));
+          return true;
+        } catch (error) {
+          console.error("Failed to send WebSocket action:", error instanceof Error ? error.message : "Unknown error");
+          return false;
+        }
       },
-
     }),
     {
       name: "ChatStore",
-      serialize: false,
+      serialize: false, // Disable serialization for better performance
     }
   )
 );

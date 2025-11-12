@@ -244,14 +244,14 @@ const MessageComponent: React.FC<MessageProps> = ({
     <div
       className={`flex ${
         isCurrentUser ? "justify-end" : "justify-start"
-      } my-2 px-1 justify-end`}
+      } my-2 px-1 justify-end min-w-2xs`}
     >
       <ContextMenu>
-        <ContextMenuTrigger>
-          <Card
-              className={`relative rounded-2xl px-4 py-3 shadow-sm transition-all
+        <ContextMenuTrigger className="min-w-2xs">
+          <div
+              className={`relative rounded-2xl p-3 shadow-sm transition-all
               ${isCurrentUser ? "bg-primary text-primary-foreground ml-auto" : "bg-muted mr-auto"}
-              max-w-[75%]
+              max-w-[75%] 
             `}
           >
             {/* Editing Mode */}
@@ -285,7 +285,7 @@ const MessageComponent: React.FC<MessageProps> = ({
             ) : (
               <>
                 {/* Message Body */}
-                <div className="text-sm whitespace-pre-wrap break-words ">
+                <div className="text-sm whitespace-pre-wrap break-words w-auto min-w-2">
                   {message.body}
                 </div>
 
@@ -294,26 +294,25 @@ const MessageComponent: React.FC<MessageProps> = ({
                   <img
                     src={attachmentSrc}
                     alt="Attachment"
-                    className="mt-1 rounded-lg max-h-52 object-contain"
+                    className=" rounded-lg max-h-52 object-contain"
                   />
                 )}
 
                 {/* Timestamp */}
                 <div
-                  className={`text-[10px] mt-2 text-right ${
+                  className={`text-[10px] text-right ${
                     isCurrentUser
                       ? "text-primary-foreground/70"
                       : "text-muted-foreground"
                   }`}
                 >
                   {message.createdAt
-                    ? new Date(message.createdAt).toLocaleDateString()+
-                    " " + new Date(message.createdAt).toLocaleTimeString()
+                    ? new Date(message.createdAt).toLocaleTimeString()
                     : ""}
                 </div>
               </>
             )}
-          </Card>
+          </div>
         </ContextMenuTrigger>
 
         {/* Right-click menu */}
@@ -336,3 +335,4 @@ const MessageComponent: React.FC<MessageProps> = ({
 };
 
 export default MessageComponent;
+

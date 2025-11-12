@@ -51,21 +51,21 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
             <h2 className="text-sm font-medium">Conversation</h2>
           </div>
 
-          <div>
+          {/* <div>
             <button
               className="text-sm p-2 rounded hover:bg-accent/10"
               onClick={() => setRightMode("create")}
             >
               + New
             </button>
-          </div>
+          </div> */}
         </div>
 
         {/* Content */}
         {/* Make the right pane a flex column so children control their own scrolling.
             Conversation pages should keep header and input visible while MessagesList
             handles overflowing messages. */}
-  <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex-1 flex flex-col min-h-0">
           {rightMode === "default" ? (
             children
           ) : (

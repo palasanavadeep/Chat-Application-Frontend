@@ -22,7 +22,6 @@ export default function ConversationSettingsPage() {
   const id = params?.id as string | undefined;
   const router = useRouter();
 
-  // ✅ All hooks must be defined before any conditional returns
   const sendSocketAction = useChatStore((s) => s.sendSocketAction);
   const conversation = useChatStore((s) =>
     s.state.conversations.find((c) => String(c.id) === String(id))
@@ -38,11 +37,11 @@ export default function ConversationSettingsPage() {
     conversation?.description ?? ""
   );
   
-  // ✅ Effect to request conversation data if needed
+  // Effect to request conversation data if needed
   useEffect(() => {
     try {
       const isGroupNow =
-        (conversation?.type?.lookupCode ?? "").toLowerCase() === "group";
+        (conversation?.type?.lookupCode ?? "") === CONVERSATION_TYPES.GROUP;
       if (
         isGroupNow && conversation
       ) {
@@ -52,6 +51,7 @@ export default function ConversationSettingsPage() {
       console.error(e);
     }
   }, [conversation?.id, sendSocketAction]);
+
     useEffect(() => {
     if (!id || !conversation) {
       router.push("/chat");
@@ -59,7 +59,7 @@ export default function ConversationSettingsPage() {
     }, [id, conversation, router]);
 
 
-  // ✅ Early returns AFTER hooks
+  // Early returns AFTER hooks
   if (!id) {
     return <div className="p-6">No conversation selected</div>;
   }
@@ -74,7 +74,7 @@ export default function ConversationSettingsPage() {
   );
   const isAdmin = myParticipant?.role?.lookupCode === ROLES.ADMIN;
 
-  // ✅ Handlers
+  // Handlers
   const handleAddMember = (userId: number) => {
     sendSocketAction("addUserToConversation", {
       conversationId: conversation.id,
@@ -99,7 +99,7 @@ export default function ConversationSettingsPage() {
     }
   };
 
-  const handleLeaveOrDelete = () => {
+  const handleLeave = () => {
     sendSocketAction("leaveConversation", {
       conversationId: conversation.id,
     });
@@ -124,7 +124,7 @@ export default function ConversationSettingsPage() {
     }
   };
 
-  // ✅ Header details
+  // Header details
   const headerName = isGroup
     ? conversation.name ?? `Group ${conversation.id}`
     : participants.find((p) => String(p.user?.id) !== String(user?.id))?.user
@@ -145,7 +145,7 @@ export default function ConversationSettingsPage() {
 
   
 
-  // ✅ Render
+  // Render
   return (
     <div className="flex flex-col h-full bg-white border-l">
       {/* --- Header Section --- */}
@@ -393,7 +393,7 @@ export default function ConversationSettingsPage() {
           {/* --- Leave/Delete Section --- */}
           {activeTab === "actions" && (
             <div className="text-center mt-10">
-              <Button variant="destructive" onClick={handleLeaveOrDelete}>
+              <Button variant="destructive" onClick={handleLeave}>
                 {isGroup ? "Leave Group" : "Delete Chat"}
               </Button>
             </div>

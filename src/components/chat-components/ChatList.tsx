@@ -38,7 +38,7 @@ export function ChatList() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Icon column */}
-        <div className="w-20 border-r flex flex-col items-center py-3">
+        <div className="w-20 border-r bg-[#F8F8F8] flex flex-col items-center py-3">
           <div className="flex flex-col items-center space-y-3">
             <div className="flex flex-col items-center">
               <button onClick={() => setConversationFilter("all")} className="p-2 rounded-md hover:bg-gray-100">
@@ -63,7 +63,7 @@ export function ChatList() {
         </div>
 
         {/* Chat list */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto  ">
           {conversations.map((c) => (
             <div key={c.id} onClick={() => router.push(`/chat/${c.id}`)}>
               <ChatListItem conversation={c} />
