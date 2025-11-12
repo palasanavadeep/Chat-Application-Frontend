@@ -181,7 +181,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
-import { useChatStore } from "@/lib/store"
+import { useChatStore } from "@/lib/ChatStoreInitializer"
 
 interface MessageProps {
   message: Message;

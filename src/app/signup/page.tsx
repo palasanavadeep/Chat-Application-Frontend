@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useChatStore } from "@/lib/store";
+import { useChatStore } from "@/lib/ChatStoreInitializer";
 import { Upload } from "lucide-react";
 import LabledInput from "@/components/LabledInput";
 import Link from "next/link";
@@ -30,10 +30,21 @@ export default function SignUpPage() {
         }
 
         const formData = new FormData();
-        formData.append("username", username);
-        formData.append("email", email);
-        formData.append("password", password);
-        formData.append("displayName", displayName ?? username);
+        formData.append("user", 
+            new Blob(
+                [JSON.stringify({
+                    username,
+                    email,
+                    password,
+                    displayName
+                })], 
+            { type: "application/json" }
+            )
+        );
+        // formData.append("username", username);
+        // formData.append("email", email);
+        // formData.append("password", password);
+        // formData.append("displayName", displayName ?? username);
         if (file) {
             formData.append("profileImageFile", file);
         }

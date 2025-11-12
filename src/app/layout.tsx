@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono,Poppins } from "next/font/google";
 import "./globals.css";
-import { ChatStoreInitializer } from '@/lib/store'
+import { ChatStoreInitializer } from '@/lib/ChatStoreInitializer'
 import { Toaster } from "@/components/ui/sonner"
 
 const geistSans = Geist({

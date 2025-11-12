@@ -10,7 +10,7 @@ export default function ConversationPage() {
   const id = params?.id as string | undefined
   const setActiveConversation = useChatStore((s) => s.setActiveConversation)
   // conversation.id may be a number or string; route param `id` is a string.
-    // normalize both to string when comparing so the find works reliably.
+  // normalize both to string when comparing so the find works reliably.
   const  conversation = useChatStore((s) => s.state.conversations.find((c) => String(c.id) === String(id)))
   const {sendSocketAction} = useChatStore();
   const addOrUpdateConversation = useChatStore((s) => s.addOrUpdateConversation)
@@ -55,7 +55,7 @@ export default function ConversationPage() {
   if (!conversation) {
     return (
       <div className="h-full flex items-center justify-center text-gray-600">
-        <div>Loading conversation…</div>
+        <div>Conversation Not found or You are not a member of the conversation</div>
       </div>
     )
   }

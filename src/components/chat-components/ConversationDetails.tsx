@@ -3,9 +3,10 @@
 import React from "react"
 import Image from 'next/image'
 import type { Conversation } from "@/lib/types"
-import { useChatStore } from '@/lib/store'
+import { useChatStore } from '@/lib/ChatStoreInitializer'
 import { base64ToDataUrl } from "@/lib/utils"
 import { useRouter } from 'next/navigation'
+import { CONVERSATION_TYPES } from "@/constants"
 
 interface Props {
   conversation: Conversation
@@ -37,7 +38,7 @@ export default function ConversationDetails({ conversation }: Props) {
 
   const openDetails = () => {
     try {
-      if (conversation && conversation.id) {
+      if (conversation && conversation.id && conversation.type.lookupCode !== CONVERSATION_TYPES.PERSONAL) {
         router.push(`/chat/${conversation.id}/details`)
       }
     } catch (e) {}

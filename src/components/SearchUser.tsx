@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import type { User } from "@/lib/types";
 import { Search } from "lucide-react";
-import { useChatStore } from "@/lib/store";
+import { useChatStore } from "@/lib/ChatStoreInitializer";
 
 interface SearchUserProps {
   placeholder?: string;
@@ -13,7 +13,7 @@ interface SearchUserProps {
 }
 
 export default function SearchUser({
-  placeholder = "Search by Username/Email",
+  placeholder = "Search by Username",
   onSelect,
   exactUsernameLookup = false,
 }: SearchUserProps) {

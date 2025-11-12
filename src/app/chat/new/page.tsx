@@ -112,7 +112,7 @@
 
 import React, { useState, useEffect } from "react";
 import SearchUser from "@/components/SearchUser";
-import { useChatStore } from "@/lib/store";
+import { useChatStore } from "@/lib/ChatStoreInitializer";
 import type { User } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import FileUploadComponent from "@/components/FileUploadComponent";

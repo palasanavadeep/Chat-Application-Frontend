@@ -38,7 +38,7 @@ import React, { useState, useRef } from "react"
 import { Paperclip, Send, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useChatStore } from "@/lib/store"
+import { useChatStore } from "@/lib/ChatStoreInitializer"
 import Image from "next/image"
 
 interface Props {

@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { MessageSquare, Users, Plus, User as UserIcon } from "lucide-react";
-import { useChatStore } from "@/lib/store";
+import { useChatStore } from "@/lib/ChatStoreInitializer";
 import ChatListItem from "./ChatListItem";
 import React from "react";
 

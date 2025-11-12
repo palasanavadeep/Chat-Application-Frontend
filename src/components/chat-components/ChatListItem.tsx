@@ -3,7 +3,7 @@
 import React, { useEffect } from "react";
 import Image from "next/image";
 import type { Conversation } from "@/lib/types";
-import { useChatStore } from "@/lib/store";
+import { useChatStore } from "@/lib/ChatStoreInitializer";
 import { base64ToDataUrl } from "@/lib/utils";
 
 interface ChatListItemProps {

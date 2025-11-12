@@ -47,13 +47,7 @@ export const ChatStoreInitializer: React.FC<{ children: React.ReactNode }> = ({ 
 					connectedOnceRef.current = true
 					connectSocket()
 				}
-				// if the socket isn't available but chats aren't loaded, attempt to load via store
-				// this covers the case where you want conversations available immediately
-				if (token && pathname && pathname.startsWith("/chat") && !chatsLoaded) {
-					try {
-						useChatStore.getState().loadChats()
-					} catch (e) {}
-				}
+				
 			} catch (e) {}
 			// eslint-disable-next-line react-hooks/exhaustive-deps
 		}, [token, pathname])
