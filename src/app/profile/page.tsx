@@ -10,6 +10,7 @@ import { ArrowLeft, Pencil } from "lucide-react";
 import Image from "next/image";
 import CustomizableAlertDialog from "@/components/CustomizableAlertDialog";
 import { base64ToDataUrl } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface UserProfile {
     username?: string;
@@ -22,7 +23,7 @@ interface UserProfile {
 
 export default function ProfilePage() {
     const router = useRouter();
-    const { state } = useChatStore()
+    const { state, sendSocketAction } = useChatStore()
     const storeUser = state.user
 
     const [user, setUser] = useState<UserProfile | null>(null)
@@ -44,7 +45,10 @@ export default function ProfilePage() {
 
     const handleSave = async () => {
         // TODO: implement update request
-        alert("Profile saved!");
+        const saved = await sendSocketAction("updateProfile",user);
+        if(!saved){
+            toast.error("Error in send the request to server to update the user details. !!");
+        }
     };
 
     const handleDelete = async () => {
@@ -74,13 +78,13 @@ export default function ProfilePage() {
     
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-            <Card className="w-full max-w-4xl rounded-2xl shadow-md">
+        <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
+            <Card className="w-full max-w-4xl rounded-2xl shadow-md bg-gray-900">
                 <CardHeader className="relative flex justify-center items-center">
                     {/* Back Button */}
                     <button
                         onClick={() => router.back()}
-                        className="absolute left-4 top-4 flex items-center space-x-1 text-gray-600 hover:text-gray-800  cursor-pointer"
+                        className="absolute p-2 left-4 top-4 flex items-center space-x-1 hover:bg-gray-600  cursor-pointer rounded-full"
                     >
                         <ArrowLeft size={20} />
                         <span className="text-sm">Back</span>
@@ -91,7 +95,7 @@ export default function ProfilePage() {
                     </CardTitle>
                 </CardHeader>
 
-                <CardContent className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-8 p-6">
+                <CardContent className="flex flex-col md:flex-row items-center justify-center md:justify-between gap-8 p-6 ">
                     {/* Left Section: Avatar */}
                     <div className="w-1/2 flex flex-col items-center space-y-2 justify-center">
                         <div className="relative flex justify-center items-center">
@@ -102,11 +106,11 @@ export default function ProfilePage() {
                                 height={240}
                                 className="rounded-full object-cover border"
                             />
-                            <button className="absolute bottom-2 right-2 bg-white p-1.5 rounded-full shadow hover:bg-gray-100 transition">
+                            {/* <button className="absolute bottom-2 right-2 bg-white p-1.5 rounded-full shadow hover:bg-gray-100 transition">
                                 <Pencil size={16} />
-                            </button>
+                            </button> */}
                         </div>
-                        <p className="pt-3 text-sm text-gray-700">
+                        <p className="pt-3 text-sm text-gray-400">
                             Member since{" "}
                             {user.createdAt
                                 ? new Date(user.createdAt).toLocaleDateString("en-GB", {
@@ -125,7 +129,7 @@ export default function ProfilePage() {
                             type="text"
                             placeholder="display name"
                             value={user.displayName ?? ""}
-                            onChange={()=>{}}
+                            onChange={(e)=>{setUser({...user, displayName : e.target.value})}}
                         /> 
                         
                         <LabledInput
@@ -133,7 +137,7 @@ export default function ProfilePage() {
                             type="text"
                             placeholder="username"
                             value={user.username ?? ""}
-                            onChange={()=>{}}
+                            onChange={(e)=>{setUser({...user, username : e.target.value})}}
                         />
 
                         <LabledInput
@@ -141,7 +145,7 @@ export default function ProfilePage() {
                             value={user.email ?? ""}
                             type="email"
                             placeholder="email"
-                            onChange={()=>{}}
+                            onChange={(e)=>{setUser({...user, email : e.target.value})}}
                         />
 
                         {/* <div className="relative">

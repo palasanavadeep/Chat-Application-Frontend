@@ -9,8 +9,6 @@ export default function ConversationPage() {
   const params = useParams()
   const id = params?.id as string | undefined
   const setActiveConversation = useChatStore((s) => s.setActiveConversation)
-  // conversation.id may be a number or string; route param `id` is a string.
-  // normalize both to string when comparing so the find works reliably.
   const  conversation = useChatStore((s) => s.state.conversations.find((c) => String(c.id) === String(id)))
   const {sendSocketAction} = useChatStore();
   const addOrUpdateConversation = useChatStore((s) => s.addOrUpdateConversation)
@@ -41,7 +39,6 @@ export default function ConversationPage() {
         setActiveConversation(null)
       } catch (e) {}
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   if (!id) {

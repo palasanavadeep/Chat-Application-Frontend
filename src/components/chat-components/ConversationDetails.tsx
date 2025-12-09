@@ -45,7 +45,7 @@ export default function ConversationDetails({ conversation }: Props) {
   }
 
   return (
-    <div className="flex items-center justify-between p-4 border-b bg-white sticky top-0 z-10 ">
+    <div className="flex items-center justify-between p-4 border-b  sticky top-0 z-10 ">
       <button onClick={openDetails} className="flex items-center gap-4 text-left w-full hover:cursor-pointer">
         <div className="w-12 h-12 relative rounded-full overflow-hidden">
           <Image src={imageSrc === '/defaultImage.jpg' ? '/defaultImage.jpg' : base64ToDataUrl(imageSrc)} alt={`${title} avatar`} fill sizes="48px" className="object-cover" unoptimized />

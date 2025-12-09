@@ -287,6 +287,8 @@ export function reducer(state: ChatState, action: Action): ChatState {
       return { ...state, conversations }
     }
 
+    
+
     // Return unchanged state for unknown actions
     default:
       return state

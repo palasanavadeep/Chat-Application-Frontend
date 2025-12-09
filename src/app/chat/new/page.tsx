@@ -50,7 +50,9 @@ export default function NewChatPage() {
       const results = state.searchResults ?? [];
       const filtered = results.filter((u) => u.id !== user.id);
       setSearchResults(filtered);
-    } catch (e) {}
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const removeMember = (id: string | number) =>
@@ -62,7 +64,9 @@ export default function NewChatPage() {
         type: CONVERSATION_TYPES.PERSONAL,
         participants: [user.id],
       });
-    } catch (e) {}
+    } catch (e) {
+      console.error(e);
+    }
     router.push("/chat");
   };
 
@@ -96,13 +100,13 @@ export default function NewChatPage() {
 
   return (
     <div className="h-full">
-      <h2 className="text-2xl font-semibold mb-2 p-2">Start a New Chat</h2>
+      <h2 className="text-2xl font-semibold mb-2 p-2 pt-4">Start a New Chat</h2>
       <div className="flex h-[calc(100%-56px)] border rounded overflow-hidden">
         {/* Left sidebar */}
-        <div className="w-48 bg-gray-50">
+        <div className="w-48 border-r">
           <button
             className={`w-full p-3 text-left ${
-              mode === "personal" ? "bg-gray-200" : ""
+              mode === "personal" ? "bg-gray-800" : ""
             }`}
             onClick={() => {
               setMode("personal");
@@ -113,7 +117,7 @@ export default function NewChatPage() {
           </button>
           <button
             className={`w-full p-3 text-left ${
-              mode === "group" ? "bg-gray-200" : ""
+              mode === "group" ? "bg-gray-800" : ""
             }`}
             onClick={() => {
               setMode("group");
@@ -161,7 +165,7 @@ export default function NewChatPage() {
                 <input
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
-                  className="w-full p-3 border rounded"
+                  className="w-full p-2 border rounded"
                 />
               </div>
 
@@ -181,7 +185,7 @@ export default function NewChatPage() {
                   id="group-image-upload"
                   file={groupImage}
                   setFile={setGroupImage}
-                  styles="w-32 p-2 bg-white shadow-sm"
+                  styles="w-32 p-2 shadow-sm"
                 />
               </div>
 
@@ -194,7 +198,7 @@ export default function NewChatPage() {
                   {members.map((m) => (
                     <div
                       key={m.id}
-                      className="flex items-center justify-between p-2 bg-gray-100 rounded"
+                      className="flex items-center justify-between p-2 rounded border-gray-700 border-1"
                     >
                       <div className="flex items-center space-x-3">
                         {/* Profile Image */}

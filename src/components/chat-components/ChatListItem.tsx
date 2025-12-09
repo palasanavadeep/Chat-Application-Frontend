@@ -48,15 +48,15 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ conversation }) => {
       "/defaultImage.jpg";
   }
 
-  let lastMessage = conversation.lastMessage?.body ?? "Start Chat";
+  const lastMessage = conversation.lastMessage?.body ?? "Start Chat";
   const hasUnread =
     !!conversation.hasUnreadMessages || !!conversation.unreadCount;
 
   return (
     <div
-      className={`flex items-center p-3 border-b border-gray-200 cursor-pointer select-none
-      ${activeConversationId == conversation.id ? "bg-gray-200" : ""}
-      hover:bg-gray-100 transition-colors`}
+      className={`flex items-center p-3 border-b border cursor-pointer select-none
+      ${activeConversationId == conversation.id ? "bg-gray-800" : ""}
+      hover:bg-gray-800 transition-colors`}
     >
       {/* Profile Image */}
       <div className="relative flex-shrink-0 w-12 h-12 rounded-full overflow-hidden mr-3">
@@ -76,15 +76,15 @@ const ChatListItem: React.FC<ChatListItemProps> = ({ conversation }) => {
 
       {/* Text Section */}
       <div className="flex-1 min-w-0 overflow-hidden">
-        <div className="text-base font-semibold text-gray-800 truncate">
+        <div className="text-base font-semibold  truncate">
           {displayName}
         </div>
-        <div className="text-sm text-gray-600 truncate">{lastMessage}</div>
+        <div className="text-sm text-gray-100 truncate">{lastMessage}</div>
       </div>
 
       {/* Unread Indicator */}
       {hasUnread && (
-        <div className="flex-shrink-0 w-3 h-3 bg-red-500 rounded-full ml-2" />
+        <div className="flex-shrink-0 w-3 h-3 bg-blue-500 rounded-full ml-2" />
       )}
     </div>
   );

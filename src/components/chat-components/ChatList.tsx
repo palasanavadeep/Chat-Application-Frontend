@@ -23,14 +23,14 @@ export function ChatList() {
   })
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full border">
       {/* Top row: title + new conversation button */}
       <div className="p-3 flex items-center justify-between border-b">
-        <div className="font-semibold text-lg">Chat Application</div>
+        <div className="font-semibold text-lg hover:cursor-pointer" onClick={()=>router.push('/chat')}>Chat Application</div>
         <button
           aria-label="New Conversation"
           onClick={() => router.push('/chat/new')}
-          className="p-2 rounded-md hover:bg-gray-100"
+          className="p-2 rounded-md hover:bg-gray-800"
         >
           <Plus size={18} />
         </button>
@@ -38,17 +38,17 @@ export function ChatList() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Icon column */}
-        <div className="w-20 border-r bg-[#F8F8F8] flex flex-col items-center py-3">
+        <div className="w-20 border-r  flex flex-col items-center py-3">
           <div className="flex flex-col items-center space-y-3">
             <div className="flex flex-col items-center">
-              <button onClick={() => setConversationFilter("all")} className="p-2 rounded-md hover:bg-gray-100">
+              <button onClick={() => setConversationFilter("all")} className="p-2 rounded-md hover:bg-gray-800">
                 <MessageSquare />
               </button>
               <span className="text-[11px] mt-1 text-center">All</span>
             </div>
 
             <div className="flex flex-col items-center">
-              <button onClick={() => setConversationFilter("group")} className="p-2 rounded-md hover:bg-gray-100">
+              <button onClick={() => setConversationFilter("group")} className="p-2 rounded-md hover:bg-gray-800">
                 <Users />
               </button>
               <span className="text-[11px] mt-1 text-center">Groups</span>
@@ -63,7 +63,7 @@ export function ChatList() {
         </div>
 
         {/* Chat list */}
-        <div className="flex-1 overflow-y-auto  ">
+        <div className="flex-1 overflow-y-auto scrollbar-hide ">
           {conversations.map((c) => (
             <div key={c.id} onClick={() => router.push(`/chat/${c.id}`)}>
               <ChatListItem conversation={c} />
@@ -80,7 +80,7 @@ function ProfileButton() {
   return (
     <button
       onClick={() => router.push('/profile')}
-      className="flex flex-col items-center p-1 rounded-md hover:bg-gray-100"
+      className="flex flex-col items-center p-2 rounded-lg hover:bg-gray-800"
       aria-label="Profile"
     >
       <UserIcon />

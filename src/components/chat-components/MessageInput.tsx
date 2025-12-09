@@ -96,7 +96,7 @@ export default function MessageInput({ convId }: Props) {
   }
 
   return (
-    <div className="p-3 border-t bg-white flex flex-col gap-2 flex-none">
+    <div className="p-3 border-t flex flex-col gap-2 flex-none">
       {/* File Preview Section */}
       {file && (
         <div className="flex items-center justify-between bg-gray-50 border p-2 rounded-md">

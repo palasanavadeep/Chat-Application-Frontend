@@ -10,6 +10,7 @@ import { Upload } from "lucide-react";
 import LabledInput from "@/components/LabledInput";
 import Link from "next/link";
 import Image from 'next/image'
+import { toast } from "sonner";
 
 export default function SignUpPage() {
     const [username, setUsername] = useState("");
@@ -24,8 +25,14 @@ export default function SignUpPage() {
     const { setAuthFromLogin } = useChatStore()
 
     const handleRegister = async () => {
+        
         if (password !== confirmPassword) {
-            alert("Passwords do not match!");
+            toast.warning("Passwords do not match!",{position:"top-right"});
+            return;
+        }
+
+        if(!file){
+            toast.warning("Please add a profile Image",{position:"top-right"})
             return;
         }
 
@@ -41,10 +48,7 @@ export default function SignUpPage() {
             { type: "application/json" }
             )
         );
-        // formData.append("username", username);
-        // formData.append("email", email);
-        // formData.append("password", password);
-        // formData.append("displayName", displayName ?? username);
+
         if (file) {
             formData.append("profileImageFile", file);
         }
@@ -68,20 +72,20 @@ export default function SignUpPage() {
                     return
                 }
                 // fallback: show success but no auto-login
-                alert("Registration successful!")
+                toast.success("Registration successful!")
             } else {
                 const errorData = responseData;
-                alert(`Registration failed: ${errorData.message ?? responseData.status}`)
+                toast.error(`Registration failed: ${errorData.message ?? responseData.status}`)
             }
         } catch (error) {
-            alert("An error occurred during registration.")
+            toast.error("An error occurred during registration."+error)
         } finally {
             setLoading(false)
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gray-800 p-4">
             <Card className="w-full max-w-5xl rounded-2xl shadow-lg">
                 <CardHeader className="text-center">
                     <CardTitle className="text-2xl font-semibold">Chat Application</CardTitle>
@@ -141,9 +145,9 @@ export default function SignUpPage() {
                             />
 
                             <Label>Avatar</Label>
-                            <div className="flex flex-col items-center border rounded-lg p-4 bg-gray-50"
+                            <div className="flex flex-col items-center border rounded-lg p-4 "
                             onClick={() => document.getElementById("fileInput")?.click()}>
-                                <div className="w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center bg-white">
+                                <div className="w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center ">
                                     {file ? (
                                         <img
                                             src={URL.createObjectURL(file)}
@@ -154,10 +158,10 @@ export default function SignUpPage() {
                                         <Upload className="text-gray-400" size={36} />
                                     )}
                                 </div>
-                                <p className="text-xs mt-2 text-gray-500 text-center">
+                                {!file && <p className="text-xs mt-2 text-gray-500 text-center">
                                     Please upload your image by clicking here on the box.
                                     
-                                </p>
+                                </p>}
                                 <input
                                     id="fileInput"
                                     type="file"

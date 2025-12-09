@@ -25,13 +25,13 @@ export default function FileUploadComponent({
 
   return (
     <div
-      className={`w-full flex flex-col items-center border rounded-lg p-3 bg-gray-50 cursor-pointer hover:bg-gray-100 transition ${styles}`}
+      className={`w-full flex flex-col items-center border rounded-lg p-3 transition ${styles} hover:cursor-pointer`}
       onClick={() => document.getElementById(id)?.click()}
     >
       {/* {label && <p className="text-sm mb-2 font-medium text-gray-700">{label}</p>} */}
 
       {/* Upload Box — smaller by default */}
-      <div className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center bg-white overflow-hidden">
+      <div className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center overflow-hidden">
         {file ? (
           <img
             src={URL.createObjectURL(file)}
@@ -39,13 +39,13 @@ export default function FileUploadComponent({
             className="w-full h-full object-cover rounded-lg"
           />
         ) : (
-          <Upload className="text-gray-400" size={28} />
+          <Upload className="text-gray-800" size={28} />
         )}
       </div>
 
-      <p className="text-xs mt-2 text-gray-500 text-center">
+      {!file && (<p className="text-xs mt-2 text-gray-700 text-center">
         Click to upload image
-      </p>
+      </p>)}
 
       <input
         id={id}
@@ -55,8 +55,10 @@ export default function FileUploadComponent({
         className="hidden"
       />
 
+      
+
       {file && (
-        <p className="text-xs text-gray-600 truncate mt-2">{file.name}</p>
+        <p className="text-xs text-gray-700 truncate mt-2">{file.name}</p>
       )}
     </div>
   )

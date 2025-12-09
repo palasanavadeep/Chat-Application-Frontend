@@ -59,8 +59,8 @@ export default function SearchUser({
           placeholder={placeholder}
           className="flex-1 p-2 outline-none"
         />
-        <button onClick={doSearch} className="p-2 bg-gray-100">
-          {loading ? "..." : <Search />}
+        <button onClick={doSearch} className="p-2 hover:cursor-pointer bg-gray-800">
+          {loading ? "..." : <Search  className=""/>}
         </button>
       </div>
 
@@ -119,7 +119,7 @@ function SearchResultItem({
       </div>
       <button
         onClick={() => onSelect(user)}
-        className="px-3 py-1 bg-blue-500 text-white rounded"
+        className="px-3 py-1 bg-blue-500  rounded"
       >
         Add
       </button>

@@ -397,6 +397,39 @@ const useChatStore = create<StoreContextType>()(
                   }));
                   break;
                 }
+                case "updateProfileResponse": {
+                  const prof: User = payload;
+                  const curUser = get().state.user;
+                  if (!prof?.id) {
+                    console.warn("Invalid updateProfileResponse payload: missing user id");
+                    break;
+                  }
+                  // Only update local auth if the profile belongs to the current user
+                  if (!curUser || String(prof.id) !== String(curUser.id)) {
+                    console.debug("Received profile update for a different user; ignoring locally.");
+                    break;
+                  }
+                  const safeProf: User = { ...prof };
+                  try {
+                    if ("password" in safeProf) {
+                      delete (safeProf as any).password;
+                    }
+                    set((s) => ({
+                      state: reducer(s.state, {
+                        type: "SET_AUTH",
+                        user: safeProf,
+                        token: s.state.token ?? "",
+                      } as Action),
+                    }));
+                    if (typeof window !== "undefined") {
+                      localStorage.setItem("chat_app_user", JSON.stringify(safeProf));
+                    }
+                    toast.success("Profile updated",{position:"top-right"});
+                  } catch (error) {
+                    console.error("Failed to apply profile update:", error instanceof Error ? error.message : error);
+                  }
+                  break;
+                }
                 case "ERROR": {
                   const message = data.message || "Unknown server error";
                   toast.error(`Error: ${message}`, {

@@ -11,7 +11,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="h-screen flex bg-background text-foreground relative">
       {/* Left section - visible on md+ */}
-      <div className="hidden md:flex w-full sm:w-1/5 md:w-2/5 lg:w-1/3 border-r border-border flex-col">
+      <div className="hidden md:flex w-full sm:w-1/5 md:w-2/5 lg:w-md border-r border-border flex-col">
         <ChatList />
       </div>
 
@@ -43,7 +43,7 @@ export default function ChatLayout({ children }: { children: React.ReactNode }) 
           <div className="flex items-center gap-2">
             <button
               aria-label="Open chat list"
-              className="p-2 rounded hover:bg-accent/10"
+              className="p-2 rounded"
               onClick={() => setShowListMobile(true)}
             >
               ☰

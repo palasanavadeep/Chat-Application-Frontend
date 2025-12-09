@@ -206,7 +206,7 @@ const MessageComponent: React.FC<MessageProps> = ({
 
 
   // --- Socket Emitters ---
-  const emitSocketEvent = (type: string, payload: any) => {
+  const emitSocketEvent = (type: string, payload: object) => {
     try {
       const ok = sendSocketAction(type, payload);
       if (!ok) {
@@ -251,8 +251,9 @@ const MessageComponent: React.FC<MessageProps> = ({
           <div
               className={`relative rounded-2xl p-3 shadow-sm transition-all
               ${isCurrentUser ? "bg-primary text-primary-foreground ml-auto" : "bg-muted mr-auto"}
-              max-w-[75%] 
+              max-w-[75%]
             `}
+            
           >
             {/* Editing Mode */}
             {isEditing ? (

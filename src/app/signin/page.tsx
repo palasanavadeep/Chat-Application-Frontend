@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import LabledInput from "@/components/LabledInput";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function SignInPage() {
   const [username, setUsername] = useState("");
@@ -27,7 +28,7 @@ export default function SignInPage() {
       const responseData = await response.json();
       // console.log(response);
       if (response.ok && responseData.success) {
-        console.log("Sign-in successful:", responseData);
+        console.log("Sign-in successful:", responseData.message);
         // Expecting { token, user }
         const token = responseData.data.token ?? responseData.data.accessToken ?? null
         const user = responseData.data.user ?? responseData.data.profile ?? null
@@ -36,17 +37,17 @@ export default function SignInPage() {
           router.push('/chat')
         }
       } else {
-        console.error("Sign-in failed:", responseData);
+        toast.error("Sign-in failed:", responseData);
         // console.log(responseData.message);
         // Handle sign-in failure
       }
     } catch (error) {
-      console.error("Error during sign-in:", error);
+      toast.error("Error during sign-in:"+error);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-800 px-4">
       <Card className="w-full max-w-md rounded-2xl shadow-lg flex flex-col items-center text-center py-8">
         <CardHeader className="w-full text-center">
           <CardTitle className="text-2xl font-semibold">

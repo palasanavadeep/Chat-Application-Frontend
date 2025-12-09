@@ -147,7 +147,7 @@ export default function ConversationSettingsPage() {
 
   // Render
   return (
-    <div className="flex flex-col h-full bg-white border-l">
+    <div className="flex flex-col h-full  border-l">
       {/* --- Header Section --- */}
       <div className="flex flex-col sm:flex-row items-center gap-4 p-6 border-b">
         <div className="w-24 h-24 relative rounded-full overflow-hidden flex-shrink-0 shadow-lg">
@@ -181,8 +181,8 @@ export default function ConversationSettingsPage() {
             onClick={() => setActiveTab("details")}
             className={`w-full text-left px-2 py-1 rounded ${
               activeTab === "details"
-                ? "bg-gray-200 font-medium"
-                : "hover:bg-gray-100"
+                ? "bg-gray-800 font-medium"
+                : "hover:bg-gray-700"
             }`}
           >
             Basic Details
@@ -196,8 +196,8 @@ export default function ConversationSettingsPage() {
               }}
               className={`w-full text-left px-2 py-1 rounded ${
                 activeTab === "members"
-                  ? "bg-gray-200 font-medium"
-                  : "hover:bg-gray-100"
+                  ? "bg-gray-800 font-medium"
+                  : "hover:bg-gray-700"
               }`}
             >
               Members
@@ -206,10 +206,10 @@ export default function ConversationSettingsPage() {
 
           <button
             onClick={() => setActiveTab("actions")}
-            className={`w-full text-left px-2 py-1 rounded text-red-600 ${
+            className={`w-full text-left px-2 py-1 rounded text-red-400 ${
               activeTab === "actions"
-                ? "bg-red-100 font-medium"
-                : "hover:bg-red-50"
+                ? "bg-red-500 font-medium"
+                : "hover:bg-red-500 hover:text-white"
             }`}
           >
             {isGroup ? "Leave Group" : "Delete Chat"}
@@ -313,7 +313,7 @@ export default function ConversationSettingsPage() {
                   {participants.map((p) => (
                     <ContextMenu key={p.id}>
                       <ContextMenuTrigger>
-                        <div className="flex items-center justify-between border p-2 rounded hover:bg-gray-50 cursor-pointer">
+                        <div className="flex items-center justify-between border p-2 rounded hover:bg-gray-700 cursor-pointer">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 relative rounded-full overflow-hidden">
                               <Image
@@ -393,7 +393,7 @@ export default function ConversationSettingsPage() {
           {/* --- Leave/Delete Section --- */}
           {activeTab === "actions" && (
             <div className="text-center mt-10">
-              <Button variant="destructive" onClick={handleLeave}>
+              <Button variant="destructive" className="hover:bg-red-800"onClick={handleLeave}>
                 {isGroup ? "Leave Group" : "Delete Chat"}
               </Button>
             </div>

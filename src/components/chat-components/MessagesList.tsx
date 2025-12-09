@@ -105,7 +105,7 @@ export default function MessagesList({ convId }: Props) {
   return (
     <div
       ref={elRef}
-      className="h-full overflow-y-scroll p-4 space-y-3 bg-white max-w-lvw"
+      className="h-full overflow-y-scroll p-4 space-y-3 max-w-lvw scrollbar-hide"
     >
       {groupedMessages.length === 0 ? (
         <div className="text-center text-sm text-muted-foreground">
